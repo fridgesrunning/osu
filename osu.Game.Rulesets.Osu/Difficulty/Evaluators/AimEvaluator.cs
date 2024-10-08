@@ -11,7 +11,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
     public static class AimEvaluator
     {
         private const double wide_angle_multiplier = 1.3;
-        private const double acute_angle_multiplier = 2.1;
+        private const double acute_angle_multiplier = 1.75;
         private const double slider_multiplier = 1.35;
         private const double velocity_change_multiplier = 0.75;
         
@@ -125,6 +125,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
 
                     // likely bad attempt to buff weird angles (/b/2479479) set aimStrain to unknownAngleBonus for testing. can also nerf some cases
+                    if (osuCurrObj.LazyJumpDistance > 50)
+                    {
                     unknownAngleBonus = Math.Pow(Math.Log10(10 + Math.Pow(Math.Sin((currAngle + lastAngle + lastLastAngle) / 3), 3) - Math.Pow(Math.Sin(Math.Abs(currAngle - lastAngle - lastLastAngle) / 3), 3)), 2);
 
                     //square it if above 1
@@ -144,6 +146,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                     //reduce bonus for really small distance
                     unknownAngleBonus *= Math.Max(Math.Max(osuCurrObj.LazyJumpDistance, osuLastObj.LazyJumpDistance), osuLastLastObj.LazyJumpDistance) < 100 ? 
 			        Math.Pow(Math.Pow(Math.Min(Math.Min(osuCurrObj.LazyJumpDistance, osuLastObj.LazyJumpDistance), osuLastLastObj.LazyJumpDistance), 0.5) / Math.Pow(100, 0.5), 2) : 1;
+
+                    //buff for massive distance if over 300 jump
+                    if (osuCurrObj.LazyJumpDistance > 100)
+                    {
+                    unknownAngleBonus *= osuCurrObj.StrainTime < 100 ? Math.Pow(Math.Pow(Math.Pow(1.1, 50 - osuCurrObj.StrainTime * 0.5), 0.5) * osuCurrObj.LazyJumpDistance / 100, 0.5) : 1;
+                    }
+
+                    }
 
                     }
                 }
@@ -185,6 +195,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 (1 - ((osuCurrObj.Angle.Value - Math.PI / 3) * (Math.PI / 6))) * 1 + ((osuCurrObj.Angle.Value - Math.PI / 3) * (Math.PI / 6)) * wiggleness
                 : Math.Min(wiggleness, 1) : 1; 
             }
+
+            unknownAngleBonus *= unknownAngleBonus < 0 ? 0: 1;
 
             aimStrain += unknownAngleBonus * unknown_angle_multiplier;
 

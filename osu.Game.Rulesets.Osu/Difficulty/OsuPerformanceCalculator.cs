@@ -81,17 +81,25 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 Accuracy = accuracyValue,
                 Flashlight = flashlightValue,
                 EffectiveMissCount = effectiveMissCount,
-                Total = totalValue
+                Total = speedValue
             };
         }
 
           private double computeAimValue(ScoreInfo score, OsuDifficultyAttributes attributes)
         {
             double aimValue = OsuStrainSkill.DifficultyToPerformance(attributes.AimDifficulty);
+
+            double rawAimValue = aimValue;
 			
 			double adjustedTotalHits = totalHits < 500 ? Math.Pow(totalHits, 2) / 1000 : totalHits - 250;
 
            double lengthBonus = Math.Pow(0.31 * Math.Log10(Math.Pow((attributes.AimConsistencyRatio / (Math.Pow(adjustedTotalHits / 12, 0.25))), 0.9) * Math.Pow(adjustedTotalHits, 0.5)), 1);
+
+           //Decrease the length bonus for aim if there is more speed involved in difficulty.
+
+           double speedValue = OsuStrainSkill.DifficultyToPerformance(attributes.SpeedDifficulty);
+
+               lengthBonus *= Math.Min(1, 1 - ((speedValue / (aimValue * 0.75 + speedValue)) - 0.5));
 
             aimValue *= lengthBonus;
 
@@ -106,7 +114,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             if (score.Mods.Any(h => h is OsuModRelax))
                 approachRateFactor = 0.0;
-
+ 
             aimValue *= Math.Pow(1.0 + approachRateFactor * lengthBonus, 0.5); // Buff for longer maps with high AR.
 
 
@@ -134,7 +142,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
                         // Aim scales less with accuracy, but taking speed into account.
             
-            aimValue *= Math.Pow(accuracy, 0.75 + 2 * computeSpeedValue(score, attributes) / (aimValue + computeSpeedValue(score, attributes)));
+            aimValue *= Math.Pow(accuracy, 0.75 + 2 * speedValue / (rawAimValue + speedValue));
     
             return aimValue;
         }

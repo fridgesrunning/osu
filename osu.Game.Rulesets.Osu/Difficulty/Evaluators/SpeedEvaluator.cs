@@ -46,6 +46,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             if (strainTime < min_speed_bonus)
                 speedBonus = 0.8 * Math.Pow((min_speed_bonus - strainTime) / speed_balancing_factor, 2);
 
+                 // Add additional scaling bonus for streams/bursts higher than 300bpm
+            if (strainTime < 50)
+                speedBonus = speedBonus + 1.6 * Math.Pow((50 - strainTime) / speed_balancing_factor, 2);
+
+                // Add additional scaling bonus for streams/bursts higher than 350bpm
+            if (strainTime < 1000 / (1400 / 60))
+                speedBonus = speedBonus + 2.4 * Math.Pow((1000 / (1400 / 60) - strainTime) / speed_balancing_factor, 2);
+
             double travelDistance = osuPrevObj?.TravelDistance ?? 0;
             double distance = travelDistance + osuCurrObj.MinimumJumpDistance;
 
@@ -56,7 +64,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double distanceBonus = Math.Pow(distance / single_spacing_threshold, 4) * distance_multiplier;
 
             // Base difficulty with all bonuses
-            double difficulty = Math.Pow((Math.Pow(1 + speedBonus, 1.25) + distanceBonus), 0.9) * 1000 / strainTime;
+            double difficulty = Math.Pow((Math.Pow(1 + speedBonus, 1.5) + distanceBonus), 0.9) * 1000 / strainTime;
 
             // Apply penalty if there's doubletappable doubles
             return difficulty * doubletapness;

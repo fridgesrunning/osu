@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -10,10 +10,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 {
     public static class AimEvaluator
     {
-        private const double wide_angle_multiplier = 1.5;
-        private const double acute_angle_multiplier = 1.95;
+        private const double wide_angle_multiplier = 1.3;
+        private const double acute_angle_multiplier = 2.1;
         private const double slider_multiplier = 1.35;
         private const double velocity_change_multiplier = 0.75;
+        
 
         /// <summary>
         /// Evaluates the difficulty of aiming the current object, based on:
@@ -60,6 +61,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             double acuteAngleBonus = 0;
             double sliderBonus = 0;
             double velocityChangeBonus = 0;
+            double unknownAngleBonus = 0;
+            double wiggleness = 0;
 
             double aimStrain = currVelocity; // Start strain with regular velocity.
 
@@ -83,7 +86,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                     {
                         acuteAngleBonus *= calcAcuteAngleBonus(lastAngle) // Multiply by previous angle, we don't want to buff unless this is a wiggle type pattern.
                                            * Math.Min(angleBonus, 125 / osuCurrObj.StrainTime) // The maximum velocity we buff is equal to 125 / strainTime
-                                           * Math.Pow(Math.Sin(Math.PI / 2 * Math.Min(1, (100 - osuCurrObj.StrainTime) / 25)), 2) // scale buff from 150 bpm 1/4 to 200 bpm 1/4
+                                           * Math.Pow(Math.Sin(Math.PI / 2 * Math.Min(1, (100 - osuCurrObj.StrainTime) / 25)), 3) // scale buff from 150 bpm 1/4 to 200 bpm 1/4
                                            * Math.Pow(Math.Sin(Math.PI / 2 * (Math.Clamp(osuCurrObj.LazyJumpDistance, 50, 100) - 50) / 50), 2); // Buff distance exceeding 50 (radius) up to 100 (diameter).
                     }
 
@@ -91,6 +94,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                     wideAngleBonus *= angleBonus * (1 - Math.Min(wideAngleBonus, Math.Pow(calcWideAngleBonus(lastAngle), 3)));
                     // Penalize acute angles if they're repeated, reducing the penalty as the lastLastAngle gets more obtuse.
                     acuteAngleBonus *= 0.5 + 0.5 * (1 - Math.Min(acuteAngleBonus, Math.Pow(calcAcuteAngleBonus(lastLastAngle), 3)));
+
                 }
             }
 
@@ -110,7 +114,42 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
                 // Penalize for rhythm changes.
                 velocityChangeBonus *= Math.Pow(Math.Min(osuCurrObj.StrainTime, osuLastObj.StrainTime) / Math.Max(osuCurrObj.StrainTime, osuLastObj.StrainTime), 2);
+
+                if (osuCurrObj.Angle != null && osuLastObj.Angle != null && osuLastLastObj.Angle != null)
+                {
+                    if (Math.Max(osuCurrObj.StrainTime, osuLastObj.StrainTime) < 1.25 * Math.Min(osuCurrObj.StrainTime, osuLastObj.StrainTime))
+                    {
+                    double currAngle = osuCurrObj.Angle.Value;
+                    double lastAngle = osuLastObj.Angle.Value;
+                    double lastLastAngle = osuLastLastObj.Angle.Value;
+
+
+                    // likely bad attempt to buff weird angles (/b/2479479) set aimStrain to unknownAngleBonus for testing. can also nerf some cases
+                    unknownAngleBonus = Math.Pow(Math.Log10(10 + Math.Pow(Math.Sin((currAngle + lastAngle + lastLastAngle) / 3), 3) - Math.Pow(Math.Sin(Math.Abs(currAngle - lastAngle - lastLastAngle) / 3), 3)), 2);
+
+                    //square it if above 1
+                    unknownAngleBonus *= unknownAngleBonus > 1 ? unknownAngleBonus : 1;
+
+                    //subtract 1 as it hovers around 1 and will be added to aimStrain
+                    unknownAngleBonus += -1;
+
+                    //nerf for wiggle, applies if wiggleness is low
+                    double average = (currAngle + lastAngle) / 2;
+                    wiggleness = Math.Abs(currAngle - lastAngle);
+                    
+                    wiggleness *= Math.Max(Math.Abs(average - lastAngle), Math.Abs(average - currAngle));
+                    wiggleness *= Math.Min(Math.Pow(osuCurrObj.LazyJumpDistance, 2) / 125, 1);
+                    
+
+                    //reduce bonus for really small distance
+                    unknownAngleBonus *= Math.Max(Math.Max(osuCurrObj.LazyJumpDistance, osuLastObj.LazyJumpDistance), osuLastLastObj.LazyJumpDistance) < 100 ? 
+			        Math.Pow(Math.Pow(Math.Min(Math.Min(osuCurrObj.LazyJumpDistance, osuLastObj.LazyJumpDistance), osuLastLastObj.LazyJumpDistance), 0.5) / Math.Pow(100, 0.5), 2) : 1;
+
+                    }
+                }
             }
+
+
 
             if (osuLastObj.BaseObject is Slider)
             {
@@ -124,6 +163,31 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             // Add in additional slider velocity bonus.
             if (withSliderTravelDistance)
                 aimStrain += sliderBonus * slider_multiplier;
+			
+			// Prevent low-spacing streams from contributing to aim's length bonus by reducing their aim value. There are harder aim sections than these, so they shouldn't touch much else.
+			
+			aimStrain *= acuteAngleBonus + velocityChangeBonus > 0 ? Math.Log10(10 + (Math.Pow(Math.Pow(acuteAngleBonus, 2)*Math.Pow(velocityChangeBonus, 2), 0.5) / 4)) : 
+            Math.Max(Math.Max(osuCurrObj.LazyJumpDistance, osuLastObj.LazyJumpDistance), osuLastLastObj.LazyJumpDistance) < 100 ? 
+			Math.Pow(Math.Pow(Math.Min(Math.Min(osuCurrObj.LazyJumpDistance, osuLastObj.LazyJumpDistance), osuLastLastObj.LazyJumpDistance), 0.5) / Math.Pow(100, 0.5), 2) : 1;
+
+            double unknown_angle_multiplier = 3.25;
+
+
+            // multiply unknownAngleBonus by sqrt of aimStrain, but only if unknownAngleBonus is positive
+            unknownAngleBonus *= unknownAngleBonus > 0 ? Math.Pow(aimStrain, 0.5) : 1;
+
+   
+          
+            if (osuCurrObj.Angle != null)
+            {
+                unknownAngleBonus *= osuCurrObj.Angle.Value > Math.PI / 3 ?
+                osuCurrObj.Angle.Value < Math.PI / 2 ?
+                (1 - ((osuCurrObj.Angle.Value - Math.PI / 3) * (Math.PI / 6))) * 1 + ((osuCurrObj.Angle.Value - Math.PI / 3) * (Math.PI / 6)) * wiggleness
+                : Math.Min(wiggleness, 1) : 1; 
+            }
+
+            aimStrain += unknownAngleBonus * unknown_angle_multiplier;
+
 
             return aimStrain;
         }
@@ -133,3 +197,4 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
         private static double calcAcuteAngleBonus(double angle) => 1 - calcWideAngleBonus(angle);
     }
 }
+ 

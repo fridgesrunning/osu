@@ -15,13 +15,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
     /// </summary>
     public class Speed : OsuStrainSkill
     {
-        private double skillMultiplier => 1.430;
-        private double strainDecayBase => 0.3;
+        private double skillMultiplier => 1.275;
+        private double strainDecayBase => 0.33;
 
         private double currentStrain;
         private double currentRhythm;
-
-        protected override int ReducedSectionCount => 5;
 
         public Speed(Mod[] mods)
             : base(mods)
@@ -51,6 +49,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
                 return 0;
 
             double maxStrain = ObjectStrains.Max();
+
             if (maxStrain == 0)
                 return 0;
 

@@ -14,9 +14,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 {
     public class OsuPerformanceCalculator : PerformanceCalculator
     {
-        public const double PERFORMANCE_BASE_MULTIPLIER = 1.15; // This is being adjusted to keep the final pp value scaled around what it used to be when changing things.
-
-        private bool usingClassicSliderAccuracy;
+        public const double PERFORMANCE_BASE_MULTIPLIER = 1.19; // This is being adjusted to keep the final pp value scaled around what it used to be when changing things.
 
         private double accuracy;
         private int scoreMaxCombo;
@@ -35,8 +33,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         protected override PerformanceAttributes CreatePerformanceAttributes(ScoreInfo score, DifficultyAttributes attributes)
         {
             var osuAttributes = (OsuDifficultyAttributes)attributes;
-
-            usingClassicSliderAccuracy = score.Mods.OfType<OsuModClassic>().Any(m => m.NoSliderHeadAccuracy.Value);
 
             accuracy = score.Accuracy;
             scoreMaxCombo = score.MaxCombo;
@@ -89,16 +85,18 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             };
         }
 
-        private double computeAimValue(ScoreInfo score, OsuDifficultyAttributes attributes)
+          private double computeAimValue(ScoreInfo score, OsuDifficultyAttributes attributes)
         {
             double aimValue = OsuStrainSkill.DifficultyToPerformance(attributes.AimDifficulty);
+			
+			double adjustedTotalHits = totalHits < 500 ? Math.Pow(totalHits, 2) / 1000 : totalHits - 250;
 
-            double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, totalHits / 2000.0) +
-                                 (totalHits > 2000 ? Math.Log10(totalHits / 2000.0) * 0.5 : 0.0);
+           double lengthBonus = Math.Pow(0.31 * Math.Log10(Math.Pow((attributes.AimConsistencyRatio / (Math.Pow(adjustedTotalHits / 12, 0.25))), 0.9) * Math.Pow(adjustedTotalHits, 0.5)), 1);
+
             aimValue *= lengthBonus;
 
             if (effectiveMissCount > 0)
-                aimValue *= calculateMissPenalty(effectiveMissCount, attributes.AimDifficultStrainCount);
+                aimValue *= calculateMissPenalty(effectiveMissCount, totalHits, attributes.AimConsistencyRatio);
 
             double approachRateFactor = 0.0;
             if (attributes.ApproachRate > 10.33)
@@ -109,7 +107,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             if (score.Mods.Any(h => h is OsuModRelax))
                 approachRateFactor = 0.0;
 
-            aimValue *= 1.0 + approachRateFactor * lengthBonus; // Buff for longer maps with high AR.
+            aimValue *= Math.Pow(1.0 + approachRateFactor * lengthBonus, 0.5); // Buff for longer maps with high AR.
+
+
 
             if (score.Mods.Any(m => m is OsuModBlinds))
                 aimValue *= 1.3 + (totalHits * (0.0016 / (1 + 2 * effectiveMissCount)) * Math.Pow(accuracy, 16)) * (1 - 0.003 * attributes.DrainRate * attributes.DrainRate);
@@ -129,10 +129,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 aimValue *= sliderNerfFactor;
             }
 
-            aimValue *= accuracy;
             // It is important to consider accuracy difficulty when scaling with accuracy.
             aimValue *= 0.98 + Math.Pow(attributes.OverallDifficulty, 2) / 2500;
 
+                        // Aim scales less with accuracy, but taking speed into account.
+            
+            aimValue *= Math.Pow(accuracy, 0.75 + 2 * computeSpeedValue(score, attributes) / (aimValue + computeSpeedValue(score, attributes)));
+    
             return aimValue;
         }
 
@@ -142,19 +145,23 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 return 0.0;
 
             double speedValue = OsuStrainSkill.DifficultyToPerformance(attributes.SpeedDifficulty);
+			
+            
 
-            double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, totalHits / 2000.0) +
-                                 (totalHits > 2000 ? Math.Log10(totalHits / 2000.0) * 0.5 : 0.0);
+			double adjustedTotalHits = totalHits < 1000 ? Math.Pow(totalHits, 2) / 2000 : totalHits - 500;
+			
+         double lengthBonus = Math.Pow(0.265 * Math.Log10((attributes.SpeedConsistencyRatio / (Math.Pow(adjustedTotalHits / 12, 0.25))) * Math.Pow(adjustedTotalHits, 0.5)), 1);
+
             speedValue *= lengthBonus;
 
             if (effectiveMissCount > 0)
-                speedValue *= calculateMissPenalty(effectiveMissCount, attributes.SpeedDifficultStrainCount);
+                speedValue *= calculateMissPenalty(effectiveMissCount, totalHits, attributes.SpeedConsistencyRatio);
 
             double approachRateFactor = 0.0;
             if (attributes.ApproachRate > 10.33)
                 approachRateFactor = 0.3 * (attributes.ApproachRate - 10.33);
 
-            speedValue *= 1.0 + approachRateFactor * lengthBonus; // Buff for longer maps with high AR.
+            speedValue *= Math.Pow(1.0 + approachRateFactor * lengthBonus, 0.5) * 0.5 + 0.5; // Buff for longer maps with high AR.
 
             if (score.Mods.Any(m => m is OsuModBlinds))
             {
@@ -175,7 +182,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double relevantAccuracy = attributes.SpeedNoteCount == 0 ? 0 : (relevantCountGreat * 6.0 + relevantCountOk * 2.0 + relevantCountMeh) / (attributes.SpeedNoteCount * 6.0);
 
             // Scale the speed value with accuracy and OD.
-            speedValue *= (0.95 + Math.Pow(attributes.OverallDifficulty, 2) / 750) * Math.Pow((accuracy + relevantAccuracy) / 2.0, (14.5 - attributes.OverallDifficulty) / 2);
+            speedValue *= (0.95 + Math.Pow(attributes.OverallDifficulty, 2) / 750) * Math.Pow((accuracy + relevantAccuracy) / 2.0, (14.5 - Math.Max(attributes.OverallDifficulty, 8)) / 2);
 
             // Scale the speed value with # of 50s to punish doubletapping.
             speedValue *= Math.Pow(0.99, countMeh < totalHits / 500.0 ? 0 : countMeh - totalHits / 500.0);
@@ -191,7 +198,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             // This percentage only considers HitCircles of any value - in this part of the calculation we focus on hitting the timing hit window.
             double betterAccuracyPercentage;
             int amountHitObjectsWithAccuracy = attributes.HitCircleCount;
-            if (!usingClassicSliderAccuracy)
+            if (score.Mods.OfType<OsuModClassic>().All(m => !m.NoSliderHeadAccuracy.Value))
                 amountHitObjectsWithAccuracy += attributes.SliderCount;
 
             if (amountHitObjectsWithAccuracy > 0)
@@ -208,7 +215,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double accuracyValue = Math.Pow(1.52163, attributes.OverallDifficulty) * Math.Pow(betterAccuracyPercentage, 24) * 2.83;
 
             // Bonus for many hitcircles - it's harder to keep good accuracy up for longer.
-            accuracyValue *= Math.Min(1.15, Math.Pow(amountHitObjectsWithAccuracy / 1000.0, 0.3));
+            accuracyValue *= Math.Min(1.075, Math.Pow(amountHitObjectsWithAccuracy / 1000.0, 0.3));
 
             // Increasing the accuracy value by object count for Blinds isn't ideal, so the minimum buff is given.
             if (score.Mods.Any(m => m is OsuModBlinds))
@@ -265,10 +272,21 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             return Math.Max(countMiss, comboBasedMissCount);
         }
 
-        // Miss penalty assumes that a player will miss on the hardest parts of a map,
-        // so we use the amount of relatively difficult sections to adjust miss penalty
-        // to make it more punishing on maps with lower amount of hard sections.
-        private double calculateMissPenalty(double missCount, double difficultStrainCount) => 0.96 / ((missCount / (4 * Math.Pow(Math.Log(difficultStrainCount), 0.94))) + 1);
+        // Miss penalty assumes that a player will miss on the hardest parts of a map (like it matters)
+        // so we sahkjblskjnclkjlfk https://www.desmos.com/calculator/owcog20itf
+        private double calculateMissPenalty(double missCount, double totalHits, double consistencyRatio) =>
+        (
+            (
+(1 / (1.0 * ((missCount / (5 * Math.Pow(Math.Log(consistencyRatio / 10), 0.9))) + Math.Log(Math.E + Math.Log(Math.E + Math.Pow(totalHits / 2, 0.5)))))) - 
+(1 / (1.0 * ((totalHits / (5 * Math.Pow(Math.Log(consistencyRatio / 10), 0.9))) + Math.Log(Math.E + Math.Log(Math.E + Math.Pow(totalHits / 2, 0.5)))))) 
+        ) *
+(
+1 / 
+(1 / (1.0 * (Math.Log(Math.E + Math.Log(Math.E + Math.Pow(totalHits / 2, 0.5)))))) - 
+(1 / (1.0 * ((totalHits / (5 * Math.Pow(Math.Log(consistencyRatio / 10), 0.9))) + Math.Log(Math.E + Math.Log(Math.E + Math.Pow(totalHits / 2, 0.5))))))
+)
+        ) * 0.975;
+
         private double getComboScalingFactor(OsuDifficultyAttributes attributes) => attributes.MaxCombo <= 0 ? 1.0 : Math.Min(Math.Pow(scoreMaxCombo, 0.8) / Math.Pow(attributes.MaxCombo, 0.8), 1.0);
         private int totalHits => countGreat + countOk + countMeh + countMiss;
     }

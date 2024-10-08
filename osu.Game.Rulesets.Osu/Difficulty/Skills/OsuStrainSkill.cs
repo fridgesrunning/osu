@@ -12,11 +12,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 {
     public abstract class OsuStrainSkill : StrainSkill
     {
-        /// <summary>
-        /// The number of sections with the highest strains, which the peak strain reductions will apply to.
-        /// This is done in order to decrease their impact on the overall difficulty of the map for this skill.
-        /// </summary>
-        protected virtual int ReducedSectionCount => 10;
 
         /// <summary>
         /// The baseline multiplier applied to the section with the biggest strain.
@@ -30,6 +25,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             : base(mods)
         {
         }
+		
+        public double strainCount = 1;
 
         public override double DifficultyValue()
         {
@@ -43,11 +40,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             List<double> strains = peaks.OrderDescending().ToList();
 
             // We are reducing the highest strains first to account for extreme difficulty spikes
-            for (int i = 0; i < Math.Min(strains.Count, ReducedSectionCount); i++)
+            for (int i = 0; i < Math.Max(strains.Count, 1); i++)
             {
-                double scale = Math.Log10(Interpolation.Lerp(1, 10, Math.Clamp((float)i / ReducedSectionCount, 0, 1)));
+                double scale = Math.Log10(Interpolation.Lerp(1, strains.Count, Math.Clamp((float)i / strains.Count, 0, 1)));
                 strains[i] *= Interpolation.Lerp(ReducedStrainBaseline, 1.0, scale);
             }
+
+			strainCount = strains.Count;
 
             // Difficulty is the weighted sum of the highest strains from every section.
             // We're sorting from highest to lowest strain.
@@ -61,19 +60,19 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         }
 
         /// <summary>
-        /// Returns the number of strains weighted against the top strain.
-        /// The result is scaled by clock rate as it affects the total number of strains.
+        /// Returns something that can be used in length bonus calcuation. That's all I can say.
         /// </summary>
         public double CountDifficultStrains()
         {
             if (Difficulty == 0)
                 return 0.0;
 
-            double consistentTopStrain = Difficulty / 10; // What would the top strain be if all strain values were identical
-            // Use a weighted sum of all strains. Constants are arbitrary and give nice values
-            return ObjectStrains.Sum(s => 1.1 / (1 + Math.Exp(-10 * (s / consistentTopStrain - 0.88))));
+            double consistentTopStrain = (Difficulty / strainCount * 0.8);
+            
+            return ObjectStrains.Sum(s => 1 / (1 + Math.Exp(-10 * (s / consistentTopStrain - strainCount / 12))));
         }
 
         public static double DifficultyToPerformance(double difficulty) => Math.Pow(5.0 * Math.Max(1.0, difficulty / 0.0675) - 4.0, 3.0) / 100000.0;
     }
 }
+

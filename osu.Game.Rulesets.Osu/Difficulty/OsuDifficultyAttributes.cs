@@ -46,11 +46,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         [JsonProperty("slider_factor")]
         public double SliderFactor { get; set; }
 
-        [JsonProperty("aim_difficult_strain_count")]
-        public double AimDifficultStrainCount { get; set; }
+        [JsonProperty("aim_consistency_ratio")]
+        public double AimConsistencyRatio { get; set; }
 
-        [JsonProperty("speed_difficult_strain_count")]
-        public double SpeedDifficultStrainCount { get; set; }
+        [JsonProperty("speed_consistency_ratio")]
+        public double SpeedConsistencyRatio { get; set; }
 
         /// <summary>
         /// The perceived approach rate inclusive of rate-adjusting mods (DT/HT/etc).
@@ -106,8 +106,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             yield return (ATTRIB_ID_SLIDER_FACTOR, SliderFactor);
 
-            yield return (ATTRIB_ID_AIM_DIFFICULT_STRAIN_COUNT, AimDifficultStrainCount);
-            yield return (ATTRIB_ID_SPEED_DIFFICULT_STRAIN_COUNT, SpeedDifficultStrainCount);
+            yield return (ATTRIB_ID_AIM_CONSISTENCY_RATIO, AimConsistencyRatio);
+            yield return (ATTRIB_ID_SPEED_CONSISTENCY_RATIO, SpeedConsistencyRatio);
             yield return (ATTRIB_ID_SPEED_NOTE_COUNT, SpeedNoteCount);
         }
 
@@ -122,9 +122,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             StarRating = values[ATTRIB_ID_DIFFICULTY];
             FlashlightDifficulty = values.GetValueOrDefault(ATTRIB_ID_FLASHLIGHT);
             SliderFactor = values[ATTRIB_ID_SLIDER_FACTOR];
-            AimDifficultStrainCount = values[ATTRIB_ID_AIM_DIFFICULT_STRAIN_COUNT];
-            SpeedDifficultStrainCount = values[ATTRIB_ID_SPEED_DIFFICULT_STRAIN_COUNT];
+            AimConsistencyRatio = values[ATTRIB_ID_AIM_CONSISTENCY_RATIO];
+            SpeedConsistencyRatio = values[ATTRIB_ID_SPEED_CONSISTENCY_RATIO];
             SpeedNoteCount = values[ATTRIB_ID_SPEED_NOTE_COUNT];
+
             DrainRate = onlineInfo.DrainRate;
             HitCircleCount = onlineInfo.CircleCount;
             SliderCount = onlineInfo.SliderCount;

@@ -150,15 +150,15 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                     //buff for massive distance if over 300 jump
                     if (osuCurrObj.LazyJumpDistance > 100)
                     {
-                    unknownAngleBonus *= osuCurrObj.StrainTime < 100 ? Math.Pow(Math.Pow(Math.Pow(1.1, 50 - osuCurrObj.StrainTime * 0.5), 0.5) * osuCurrObj.LazyJumpDistance / 100, 0.5) : 1;
+                    unknownAngleBonus *= osuCurrObj.StrainTime < 100 ? Math.Pow((50 * Math.Pow((100 - osuCurrObj.StrainTime) / 100, 3) + 1) * Math.Pow(osuCurrObj.LazyJumpDistance / 100, 0.5), 0.5) : 1;
                     }
 
                     }
 
                     }
-                }
+                } 
             }
-
+ 
 
 
             if (osuLastObj.BaseObject is Slider)
@@ -198,10 +198,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             unknownAngleBonus *= unknownAngleBonus < 0 ? 0: 1;
 
-            aimStrain += unknownAngleBonus * unknown_angle_multiplier;
+            aimStrain += unknownAngleBonus * unknown_angle_multiplier; 
 
 
-            return aimStrain;
+            return unknownAngleBonus;
         }
 
         private static double calcWideAngleBonus(double angle) => Math.Pow(Math.Sin(3.0 / 4 * (Math.Min(5.0 / 6 * Math.PI, Math.Max(Math.PI / 6, angle)) - Math.PI / 6)), 2);

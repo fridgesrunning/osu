@@ -11,7 +11,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
     public static class AimEvaluator
     {
         private const double wide_angle_multiplier = 1.3;
-        private const double acute_angle_multiplier = 1.75;
+        private const double acute_angle_multiplier = 2;
         private const double slider_multiplier = 1.35;
         private const double velocity_change_multiplier = 0.75;
         
@@ -34,8 +34,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             var osuLastObj = (OsuDifficultyHitObject)current.Previous(0);
             var osuLastLastObj = (OsuDifficultyHitObject)current.Previous(1);
 
+            //powers to be applied to distance and time in attempt to mitigate d/t^2. also balancing where the point is multiplied by 1 can be controlled
+            double distPow = 1.05;
+            double timePow = 0.95;
+            double distBal = 500;
+            double timeBal = 200;
+
             // Calculate the velocity to the current hitobject, which starts with a base distance / time assuming the last object is a hitcircle.
-            double currVelocity = osuCurrObj.LazyJumpDistance / osuCurrObj.StrainTime;
+            double currVelocity = (Math.Pow(osuCurrObj.LazyJumpDistance, distPow) * (distBal / Math.Pow(distBal, distPow))) / (Math.Pow(osuCurrObj.StrainTime, timePow)* (timeBal / Math.Pow(timeBal, timePow)));
 
             // But if the last object is a slider, then we extend the travel velocity through the slider into the current object.
             if (osuLastObj.BaseObject is Slider && withSliderTravelDistance)
@@ -47,7 +53,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             }
 
             // As above, do the same for the previous hitobject.
-            double prevVelocity = osuLastObj.LazyJumpDistance / osuLastObj.StrainTime;
+            double prevVelocity = (Math.Pow(osuLastObj.LazyJumpDistance, distPow) * (distBal / Math.Pow(distBal, distPow))) / (Math.Pow(osuLastObj.StrainTime, timePow)* (timeBal / Math.Pow(timeBal, timePow)));
 
             if (osuLastLastObj.BaseObject is Slider && withSliderTravelDistance)
             {
@@ -59,7 +65,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             double wideAngleBonus = 0;
             double acuteAngleBonus = 0;
-            double sliderBonus = 0;
+            double sliderBonus = 0; 
             double velocityChangeBonus = 0;
             double unknownAngleBonus = 0;
             double wiggleness = 0;
@@ -75,20 +81,20 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                     double lastLastAngle = osuLastLastObj.Angle.Value;
 
                     // Rewarding angles, take the smaller velocity as base.
-                    double angleBonus = Math.Min(currVelocity, prevVelocity);
+                    double angleBonus = Math.Min(currVelocity, prevVelocity); 
 
                     wideAngleBonus = calcWideAngleBonus(currAngle);
                     acuteAngleBonus = calcAcuteAngleBonus(currAngle);
 
-                    if (osuCurrObj.StrainTime > 100) // Only buff deltaTime exceeding 300 bpm 1/2.
+                    if (osuCurrObj.StrainTime > 100) // Only buff deltaTime exceeding 300 bpm 1/2. also much larger buffs for over 350 bpm or larger distances
                         acuteAngleBonus = 0;
                     else
                     {
                         acuteAngleBonus *= calcAcuteAngleBonus(lastAngle) // Multiply by previous angle, we don't want to buff unless this is a wiggle type pattern.
-                                           * Math.Min(angleBonus, 125 / osuCurrObj.StrainTime) // The maximum velocity we buff is equal to 125 / strainTime
-                                           * Math.Pow(Math.Sin(Math.PI / 2 * Math.Min(1, (100 - osuCurrObj.StrainTime) / 25)), 3) // scale buff from 150 bpm 1/4 to 200 bpm 1/4
-                                           * Math.Pow(Math.Sin(Math.PI / 2 * (Math.Clamp(osuCurrObj.LazyJumpDistance, 50, 100) - 50) / 50), 2); // Buff distance exceeding 50 (radius) up to 100 (diameter).
-                    }
+                                        * Math.Min(angleBonus, 125 / osuCurrObj.StrainTime) // The maximum velocity we buff is equal to 125 / strainTime
+                                        * 0.75 * Math.Pow(Math.Sin(Math.PI / 2 * Math.Min(1, (100 - osuCurrObj.StrainTime) / 25)), 3) + 1.25 * (2 * (osuCurrObj.StrainTime < (30000 / 350) ? Math.Pow(Math.Sin(Math.PI / 2 * Math.Min(1, ((30000 / 350) - osuCurrObj.StrainTime) / 25)), 3) : 0)) // scale buff from 150 bpm 1/4 to 200 bpm 1/4
+                                        * 1 * Math.Pow(Math.Sin(Math.PI / 2 * Math.Clamp(osuCurrObj.LazyJumpDistance -100, 0, 500) / 500), 3) + 2 * Math.Pow(Math.Sin(Math.PI / 2 * Math.Clamp(osuCurrObj.LazyJumpDistance - 350, 0, 500) / 500), 2); // Buff distance exceeding 50 (radius) up to 100 (diameter).
+                     }
 
                     // Penalize wide angles if they're repeated, reducing the penalty as the lastAngle gets more acute.
                     wideAngleBonus *= angleBonus * (1 - Math.Min(wideAngleBonus, Math.Pow(calcWideAngleBonus(lastAngle), 3)));
@@ -101,8 +107,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             if (Math.Max(prevVelocity, currVelocity) != 0)
             {
                 // We want to use the average velocity over the whole object when awarding differences, not the individual jump and slider path velocities.
-                prevVelocity = (osuLastObj.LazyJumpDistance + osuLastLastObj.TravelDistance) / osuLastObj.StrainTime;
-                currVelocity = (osuCurrObj.LazyJumpDistance + osuLastObj.TravelDistance) / osuCurrObj.StrainTime;
+                prevVelocity =  (Math.Pow((osuLastObj.LazyJumpDistance + osuLastLastObj.TravelDistance), distPow) * (distBal / Math.Pow(distBal, distPow))) / (Math.Pow(osuLastObj.StrainTime, timePow)* (timeBal / Math.Pow(timeBal, timePow)));
+                currVelocity =  (Math.Pow((osuCurrObj.LazyJumpDistance + osuLastObj.TravelDistance), distPow) * (distBal / Math.Pow(distBal, distPow))) / (Math.Pow(osuCurrObj.StrainTime, timePow)* (timeBal / Math.Pow(timeBal, timePow)));
 
                 // Scale with ratio of difference compared to 0.5 * max dist.
                 double distRatio = Math.Pow(Math.Sin(Math.PI / 2 * Math.Abs(prevVelocity - currVelocity) / Math.Max(prevVelocity, currVelocity)), 2);
@@ -124,7 +130,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                     double lastLastAngle = osuLastLastObj.Angle.Value;
 
 
-                    // likely bad attempt to buff weird angles (/b/2479479) set aimStrain to unknownAngleBonus for testing. can also nerf some cases
+                    // likely bad attempt to buff weird angles (/b/2479479) set aimStrain to unknownAngleBonus for testing.
                     if (osuCurrObj.LazyJumpDistance > 50)
                     {
                     unknownAngleBonus = Math.Pow(Math.Log10(10 + Math.Pow(Math.Sin((currAngle + lastAngle + lastLastAngle) / 3), 3) - Math.Pow(Math.Sin(Math.Abs(currAngle - lastAngle - lastLastAngle) / 3), 3)), 2);

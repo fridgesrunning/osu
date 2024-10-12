@@ -14,7 +14,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 {
     public class OsuPerformanceCalculator : PerformanceCalculator
     {
-        public const double PERFORMANCE_BASE_MULTIPLIER = 1.19; // This is being adjusted to keep the final pp value scaled around what it used to be when changing things.
+        public const double PERFORMANCE_BASE_MULTIPLIER = 1.23; // This is being adjusted to keep the final pp value scaled around what it used to be when changing things.
 
         private double accuracy;
         private int scoreMaxCombo;
@@ -146,7 +146,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
     
             return aimValue;
         }
-
+ 
         private double computeSpeedValue(ScoreInfo score, OsuDifficultyAttributes attributes)
         {
             if (score.Mods.Any(h => h is OsuModRelax))
@@ -293,9 +293,17 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 (1 / (1.0 * (Math.Log(Math.E + Math.Log(Math.E + Math.Pow(totalHits / 2, 0.5)))))) - 
 (1 / (1.0 * ((totalHits / (5 * Math.Pow(Math.Log(consistencyRatio / 10), 0.9))) + Math.Log(Math.E + Math.Log(Math.E + Math.Pow(totalHits / 2, 0.5))))))
 )
-        ) * 0.975;
+        ) * 
+        
+        Math.Max(1.015,
+        0.95 + 
+        0.05 *
+        ((-500 * (consistencyRatio + 500)) / Math.Pow((consistencyRatio + 500), 2) + 1)
+        ) + 0.0215;
+
+        //above constant is arbitrary and assumes that a map will never have a consistency ratio of over about 2000 (absurd) and accounts for it
 
         private double getComboScalingFactor(OsuDifficultyAttributes attributes) => attributes.MaxCombo <= 0 ? 1.0 : Math.Min(Math.Pow(scoreMaxCombo, 0.8) / Math.Pow(attributes.MaxCombo, 0.8), 1.0);
         private int totalHits => countGreat + countOk + countMeh + countMiss;
     }
-}
+}   

@@ -31,6 +31,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         {
         }
 
+        public double strainCount = 1;
+
         public override double DifficultyValue()
         {
             Difficulty = 0;
@@ -49,6 +51,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
                 strains[i] *= Interpolation.Lerp(ReducedStrainBaseline, 1.0, scale);
             }
 
+            strainCount = strains.Count;
+
             // Difficulty is the weighted sum of the highest strains from every section.
             // We're sorting from highest to lowest strain.
             foreach (double strain in strains.OrderDescending())
@@ -60,18 +64,17 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             return Difficulty;
         }
 
-        /// <summary>
-        /// Returns the number of strains weighted against the top strain.
-        /// The result is scaled by clock rate as it affects the total number of strains.
+      /// <summary>
+        /// Returns something that can be used in length bonus calcuation. That's all I can say.
         /// </summary>
         public double CountDifficultStrains()
         {
             if (Difficulty == 0)
                 return 0.0;
 
-            double consistentTopStrain = Difficulty / 10; // What would the top strain be if all strain values were identical
-            // Use a weighted sum of all strains. Constants are arbitrary and give nice values
-            return ObjectStrains.Sum(s => 1.1 / (1 + Math.Exp(-10 * (s / consistentTopStrain - 0.88))));
+            double consistentTopStrain = (Difficulty / strainCount * 0.8);
+            
+            return ObjectStrains.Sum(s => 1 / (1 + Math.Exp(-10 * (s / consistentTopStrain - strainCount / 12))));
         }
 
         public static double DifficultyToPerformance(double difficulty) => Math.Pow(5.0 * Math.Max(1.0, difficulty / 0.0675) - 4.0, 3.0) / 100000.0;

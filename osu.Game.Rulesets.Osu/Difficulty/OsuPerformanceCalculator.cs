@@ -93,12 +93,25 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         {
             double aimValue = OsuStrainSkill.DifficultyToPerformance(attributes.AimDifficulty);
 
-            double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, totalHits / 2000.0) +
-                                 (totalHits > 2000 ? Math.Log10(totalHits / 2000.0) * 0.5 : 0.0);
+            double rawAimValue = aimValue;
+
+			double adjustedTotalHits = totalHits < 500 ? Math.Pow(totalHits, 2) / 1000 : totalHits - 250;
+
+           double lengthBonus = Math.Pow(0.3 * Math.Log10(Math.Pow((attributes.AimConsistencyRatio / (Math.Pow(adjustedTotalHits / 12, 0.25))), 0.9) * Math.Pow(adjustedTotalHits, 0.75)), 1);
+
+ //Decrease the length bonus for aim if there is more speed involved in difficulty.
+
+           double speedValue = OsuStrainSkill.DifficultyToPerformance(attributes.SpeedDifficulty);
+
+               lengthBonus *= (0.5 * Math.Min(1, 1 - ((speedValue / (aimValue * 0.75 + speedValue)) - 0.5))) + 0.5;
+
+                 lengthBonus = lengthBonus < 1 ? Math.Pow(lengthBonus, 0.5) : lengthBonus;
+
             aimValue *= lengthBonus;
+            
 
             if (effectiveMissCount > 0)
-                aimValue *= calculateMissPenalty(effectiveMissCount, attributes.AimDifficultStrainCount);
+                aimValue *= calculateMissPenalty(effectiveMissCount, totalHits, attributes.AimConsistencyRatio);
 
             double approachRateFactor = 0.0;
             if (attributes.ApproachRate > 10.33)
@@ -129,26 +142,34 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 aimValue *= sliderNerfFactor;
             }
 
-            aimValue *= accuracy;
             // It is important to consider accuracy difficulty when scaling with accuracy.
             aimValue *= 0.98 + Math.Pow(attributes.OverallDifficulty, 2) / 2500;
+
+              // Aim scales less with accuracy, but taking speed into account.
+            
+            aimValue *= Math.Pow(accuracy, 0.75 + 2 * speedValue / (rawAimValue + speedValue));
 
             return aimValue;
         }
 
         private double computeSpeedValue(ScoreInfo score, OsuDifficultyAttributes attributes)
         {
-            if (score.Mods.Any(h => h is OsuModRelax))
-                return 0.0;
 
             double speedValue = OsuStrainSkill.DifficultyToPerformance(attributes.SpeedDifficulty);
 
-            double lengthBonus = 0.95 + 0.4 * Math.Min(1.0, totalHits / 2000.0) +
-                                 (totalHits > 2000 ? Math.Log10(totalHits / 2000.0) * 0.5 : 0.0);
+            if (score.Mods.Any(h => h is OsuModRelax))
+                return 0.0;
+
+           double adjustedTotalHits = totalHits < 1000 ? Math.Pow(totalHits, 2) / 2000 : totalHits - 500;
+			
+         double lengthBonus = Math.Pow(0.225 * Math.Log10((attributes.SpeedConsistencyRatio / (Math.Pow(adjustedTotalHits / 12, 0.25))) * Math.Pow(adjustedTotalHits, 0.75)), 1);
+
+        lengthBonus = lengthBonus < 1 ? Math.Pow(lengthBonus, 0.5) : lengthBonus;
+
             speedValue *= lengthBonus;
 
             if (effectiveMissCount > 0)
-                speedValue *= calculateMissPenalty(effectiveMissCount, attributes.SpeedDifficultStrainCount);
+                 speedValue *= calculateMissPenalty(effectiveMissCount, totalHits, attributes.SpeedConsistencyRatio);
 
             double approachRateFactor = 0.0;
             if (attributes.ApproachRate > 10.33)
@@ -268,7 +289,24 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         // Miss penalty assumes that a player will miss on the hardest parts of a map,
         // so we use the amount of relatively difficult sections to adjust miss penalty
         // to make it more punishing on maps with lower amount of hard sections.
-        private double calculateMissPenalty(double missCount, double difficultStrainCount) => 0.96 / ((missCount / (4 * Math.Pow(Math.Log(difficultStrainCount), 0.94))) + 1);
+        private double calculateMissPenalty(double missCount, double totalHits, double consistencyRatio) =>
+        (
+            (
+(1 / (1.0 * ((missCount / (5 * Math.Pow(Math.Log(consistencyRatio / 10), 0.9))) + Math.Log(Math.E + Math.Log(Math.E + Math.Pow(totalHits / 2, 0.5)))))) - 
+(1 / (1.0 * ((totalHits / (5 * Math.Pow(Math.Log(consistencyRatio / 10), 0.9))) + Math.Log(Math.E + Math.Log(Math.E + Math.Pow(totalHits / 2, 0.5)))))) 
+        ) *
+(
+1 / 
+(1 / (1.0 * (Math.Log(Math.E + Math.Log(Math.E + Math.Pow(totalHits / 2, 0.5)))))) - 
+(1 / (1.0 * ((totalHits / (5 * Math.Pow(Math.Log(consistencyRatio / 10), 0.9))) + Math.Log(Math.E + Math.Log(Math.E + Math.Pow(totalHits / 2, 0.5))))))
+)
+        ) * 
+        
+        Math.Min(1,
+        0.9 + 
+        0.075 *
+        ((-1000 * (consistencyRatio + 1000)) / Math.Pow((consistencyRatio + 1000), 2) + 1)
+        );
         private double getComboScalingFactor(OsuDifficultyAttributes attributes) => attributes.MaxCombo <= 0 ? 1.0 : Math.Min(Math.Pow(scoreMaxCombo, 0.8) / Math.Pow(attributes.MaxCombo, 0.8), 1.0);
         private int totalHits => countGreat + countOk + countMeh + countMiss;
     }

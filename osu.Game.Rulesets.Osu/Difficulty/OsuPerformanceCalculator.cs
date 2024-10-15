@@ -93,6 +93,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         {
             double aimValue = OsuStrainSkill.DifficultyToPerformance(attributes.AimDifficulty);
 
+            if (aimValue < 0.01)
+                return 0;
+
             double rawAimValue = aimValue;
 
 			double adjustedTotalHits = totalHits < 500 ? Math.Pow(totalHits, 2) / 1000 : totalHits - 250;
@@ -156,6 +159,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         {
 
             double speedValue = OsuStrainSkill.DifficultyToPerformance(attributes.SpeedDifficulty);
+
+            if (speedValue < 0.01)
+                return 0;
+
 
             if (score.Mods.Any(h => h is OsuModRelax))
                 return 0.0;

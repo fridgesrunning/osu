@@ -85,7 +85,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             if (strainTime < min_speed_bonus)
                 speedBonus = 0.95 * Math.Pow((min_speed_bonus - strainTime) / speed_balancing_factor, 2);
 
-                speedBonus *= 1;
+                speedBonus *= Math.Min(deceleration, acceleration);
 
             double travelDistance = osuPrevObj?.TravelDistance ?? 0;
             double distance = travelDistance + osuCurrObj.MinimumJumpDistance;

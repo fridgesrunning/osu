@@ -5,6 +5,8 @@ using System;
 using osu.Game.Rulesets.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.Difficulty.Evaluators;
+using osu.Game.Rulesets.Osu.Difficulty.Preprocessing;
+
 
 namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 {
@@ -32,9 +34,22 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
         protected override double StrainValueAt(DifficultyHitObject current)
         {
+
+            var osuCurrObj = (OsuDifficultyHitObject)current;
+
+            // holy fixes, check id 2726346, also
+
+            double mitigation = (osuCurrObj.LazyJumpDistance / Math.Pow(osuCurrObj.StrainTime, 2)) / (( Math.Pow(strainDecayBase, osuCurrObj.StrainTime / 1000)/ (1 - Math.Pow(strainDecayBase, osuCurrObj.StrainTime / 1000) )) * (osuCurrObj.LazyJumpDistance / osuCurrObj.StrainTime));
+
+            if (mitigation == mitigation)
+            {
+               currentStrain *= Math.Min(mitigation, 1000) * 475;
+            }
+
             currentStrain *= strainDecay(current.DeltaTime);
             currentStrain += AimEvaluator.EvaluateDifficultyOf(current, withSliders) * skillMultiplier;
             ObjectStrains.Add(currentStrain);
+
 
             return currentStrain;
         }

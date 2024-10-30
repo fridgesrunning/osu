@@ -125,6 +125,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             if (withSliderTravelDistance)
                 aimStrain += sliderBonus * slider_multiplier;
 
+           
+
+
             return aimStrain;
         }
 

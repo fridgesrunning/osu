@@ -37,7 +37,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             var osuCurrObj = (OsuDifficultyHitObject)current;
 
-            // holy fixes, check id 2726346, also
+            // d/t^whatever compensation, check 2731312
 
             double mitigation = (osuCurrObj.LazyJumpDistance / Math.Pow(osuCurrObj.StrainTime, 2)) / (( Math.Pow(strainDecayBase, osuCurrObj.StrainTime / 1000)/ (1 - Math.Pow(strainDecayBase, osuCurrObj.StrainTime / 1000) )) * (osuCurrObj.LazyJumpDistance / osuCurrObj.StrainTime));
 

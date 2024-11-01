@@ -37,13 +37,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             var osuCurrObj = (OsuDifficultyHitObject)current;
 
-            // d/t^whatever compensation, check 2731312
+            // d/t^(2 + some function of t) compensation, check 2731312
 
             double mitigation = (osuCurrObj.LazyJumpDistance / Math.Pow(osuCurrObj.StrainTime, 2)) / (( Math.Pow(strainDecayBase, osuCurrObj.StrainTime / 1000)/ (1 - Math.Pow(strainDecayBase, osuCurrObj.StrainTime / 1000) )) * (osuCurrObj.LazyJumpDistance / osuCurrObj.StrainTime));
 
             if (mitigation == mitigation)
             {
-               currentStrain *= Math.Min(mitigation, 1000) * 475;
+             currentStrain *= Math.Min(mitigation, 1000) * 475;
             }
 
             currentStrain *= strainDecay(current.DeltaTime);

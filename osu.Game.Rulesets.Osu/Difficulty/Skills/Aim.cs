@@ -43,7 +43,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
             if (mitigation == mitigation)
             {
-             currentStrain *= Math.Min(mitigation, 1000) * 527.115;
+             currentStrain *= Math.Min(mitigation, 1000) * 527.115; // about 1x multiplier at 0ms https://www.desmos.com/calculator/wlorqfyf8j
             }
 
             currentStrain *= strainDecay(current.DeltaTime);

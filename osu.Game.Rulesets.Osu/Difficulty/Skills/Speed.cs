@@ -1,4 +1,4 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
+﻿﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
@@ -15,33 +15,42 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
     /// </summary>
     public class Speed : OsuStrainSkill
     {
-        private double skillMultiplier => 1.45;
-        private double strainDecayBase => 0.3;
+        private const double single_spacing_threshold = OsuDifficultyHitObject.NORMALISED_DIAMETER * 1.5;
+        private const double distance_multiplier = 0.5;
+        private double totalMultiplier => 1;
+        private double burstMultiplier => 1.8;
+        private double staminaMultiplier => 0.11;
 
-        private double currentStrain;
+        private double currentBurstStrain;
+        private double currentStaminaStrain;
         private double currentRhythm;
-
-        protected override int ReducedSectionCount => 5;
 
         public Speed(Mod[] mods)
             : base(mods)
         {
         }
 
-        private double strainDecay(double ms) => Math.Pow(strainDecayBase, ms / 1000);
+        private double strainDecayBurst(double ms) => Math.Pow(0.1, ms / 1000);
+        private double strainDecayStamina(double ms) => Math.Pow(0.1, Math.Pow(ms / 1000, 2));
 
-        protected override double CalculateInitialStrain(double time, DifficultyHitObject current) => (currentStrain * currentRhythm) * strainDecay(time - current.Previous(0).StartTime);
+        protected override double CalculateInitialStrain(double time, DifficultyHitObject current) => (currentBurstStrain * currentRhythm) * strainDecayBurst(time - current.Previous(0).StartTime);
 
         protected override double StrainValueAt(DifficultyHitObject current)
         {
-            currentStrain *= strainDecay(((OsuDifficultyHitObject)current).StrainTime);
-            currentStrain += SpeedEvaluator.EvaluateDifficultyOf(current, Mods) * skillMultiplier;
-
+            currentBurstStrain *= strainDecayBurst(((OsuDifficultyHitObject)current).StrainTime);
             currentRhythm = RhythmEvaluator.EvaluateDifficultyOf(current);
+            double travelDistance = ((OsuDifficultyHitObject)current.Previous(0))?.TravelDistance ?? 0;
+            double distance = travelDistance + ((OsuDifficultyHitObject)current).MinimumJumpDistance;
+            double distanceBonus = Math.Pow(distance / single_spacing_threshold, 3.95) * distance_multiplier;
+            currentBurstStrain += Math.Max(StaminaEvaluator.EvaluateDifficultyOf(current) * staminaMultiplier, (SpeedEvaluator.EvaluateDifficultyOf(current) - 10 * distanceBonus)) * burstMultiplier * Math.Sqrt(currentRhythm);
+            
 
-            double totalStrain = currentStrain * currentRhythm;
+            currentStaminaStrain *= strainDecayStamina(((OsuDifficultyHitObject)current).StrainTime);
+            currentStaminaStrain += StaminaEvaluator.EvaluateDifficultyOf(current) * staminaMultiplier;
 
-            return totalStrain;
+            double combinedStrain = currentBurstStrain + currentStaminaStrain;
+
+            return combinedStrain;
         }
 
         public double RelevantNoteCount()

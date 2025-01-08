@@ -74,6 +74,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             return ObjectStrains.Sum(s => (1.1 - lengthFactor) / (1 + Math.Exp(-10 * (s / consistentTopStrain - 0.88 - lengthFactor / 4.0))));
         }
 
+        /// <summary>
+        /// Strain post-processing, in this case band-aiding for fake-hybrid maps 
+        /// </summary>
+        public double StrainPost()
+        {
+            return;
+        }
+
         public static double DifficultyToPerformance(double difficulty) => Math.Pow(5.0 * Math.Max(1.0, difficulty / 0.0675) - 4.0, 3.0) / 100000.0;
     }
 }

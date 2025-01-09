@@ -42,12 +42,14 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double speedNotes = ((Speed)skills[2]).RelevantNoteCount();
             double difficultSliders = ((Aim)skills[0]).GetDifficultSliders();
             double flashlightRating = 0.0;
+            double hybridRating = Math.Sqrt(skills[3].DifficultyValue()) * difficulty_multiplier;
 
             if (mods.Any(h => h is OsuModFlashlight))
-                flashlightRating = Math.Sqrt(skills[3].DifficultyValue()) * difficulty_multiplier;
+                flashlightRating = Math.Sqrt(skills[4].DifficultyValue()) * difficulty_multiplier;
 
             double aimDifficultyStrainCount = ((OsuStrainSkill)skills[0]).CountTopWeightedStrains();
             double speedDifficultyStrainCount = ((OsuStrainSkill)skills[2]).CountTopWeightedStrains();
+            double hybridDifficultyStrainCount = ((OsuStrainSkill)skills[3]).CountTopWeightedStrains();
 
             if (mods.Any(m => m is OsuModTouchDevice))
             {
@@ -73,6 +75,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double aimRelevantObjectCount = ((OsuStrainSkill)skills[0]).CountRelevantObjects();
             double aimNoSlidersRelevantObjectCount = ((OsuStrainSkill)skills[1]).CountRelevantObjects();
             double speedRelevantObjectCount = ((OsuStrainSkill)skills[2]).CountRelevantObjects();
+            double hybridRelevantObjectCount = ((OsuStrainSkill)skills[3]).CountRelevantObjects();
 
             double aimLengthBonus = 1.0 + Math.Min(1.0, aimRelevantObjectCount / 300.0) +
                                     (aimRelevantObjectCount > 300.0 ? 2.0 * Math.Log10(aimRelevantObjectCount / 300.0) : 0);
@@ -82,14 +85,21 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                                              (aimNoSlidersRelevantObjectCount > 300.0 ? 2.0 * Math.Log10(aimNoSlidersRelevantObjectCount / 300.0) : 0);
             aimRatingNoSliders *= Math.Cbrt(aimNoSlidersLengthBonus);
 
-            double speedLengthBonus = 1.0 + Math.Min(0.25, speedRelevantObjectCount / 1100.0) +
-                                      (speedRelevantObjectCount > 275 ? 0.7 * Math.Log10(speedRelevantObjectCount / 275.0) : 0.0);
+            double speedLengthBonus = 1.0 + Math.Min(0.2, speedRelevantObjectCount / 900.0) +
+                                      (speedRelevantObjectCount > 300 ? 0.5 * Math.Log10(speedRelevantObjectCount / 300.0) : 0.0);
             speedRating *= Math.Cbrt(speedLengthBonus);
+
+            double hybridLengthBonus = 1.0 + Math.Min(0.5, hybridRelevantObjectCount / 800.0) +
+                                    (hybridRelevantObjectCount > 400.0 ? 0.5 * Math.Log10(hybridRelevantObjectCount / 400.0) : 0);
+            hybridRating *= Math.Cbrt(hybridLengthBonus);
+            
+            hybridRating = 2 * Math.Min(0.4, 1.5 * Math.Pow(hybridRating / Math.Max(aimRating, speedRating), 3));
 
             double sliderFactor = aimRating > 0 ? aimRatingNoSliders / aimRating : 1;
 
             double baseAimPerformance = OsuStrainSkill.DifficultyToPerformance(aimRating);
             double baseSpeedPerformance = OsuStrainSkill.DifficultyToPerformance(speedRating);
+            double baseHybridPerformance = OsuStrainSkill.DifficultyToPerformance(hybridRating);    
             double baseFlashlightPerformance = 0.0;
 
             if (mods.Any(h => h is OsuModFlashlight))
@@ -97,9 +107,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double basePerformance =
                 Math.Pow(
-                    Math.Pow(baseAimPerformance, 1.3) +
-                    Math.Pow(baseSpeedPerformance, 1.3) +
-                    Math.Pow(baseFlashlightPerformance, 1.3), 1.0 / 1.3
+                    Math.Pow(baseAimPerformance, 1.9 - hybridRating) +
+                    Math.Pow(baseSpeedPerformance, 1.9 - hybridRating) +
+                    Math.Pow(baseFlashlightPerformance, 1.9 - hybridRating), 1.0 / (1.9 - hybridRating)
                 );
 
             double starRating = basePerformance > 0.00001
@@ -126,6 +136,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 AimDifficultSliderCount = difficultSliders,
                 SpeedDifficulty = speedRating,
                 SpeedNoteCount = speedNotes,
+                HybridRating = hybridRating,
                 FlashlightDifficulty = flashlightRating,
                 SliderFactor = sliderFactor,
                 AimDifficultStrainCount = aimDifficultyStrainCount,
@@ -163,7 +174,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             {
                 new Aim(mods, true),
                 new Aim(mods, false),
-                new Speed(mods)
+                new Speed(mods),
+				new Hybrid(mods, true)
             };
 
             if (mods.Any(h => h is OsuModFlashlight))

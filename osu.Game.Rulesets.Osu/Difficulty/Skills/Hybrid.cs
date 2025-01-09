@@ -23,7 +23,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
         private double currentStrain;
 
-        private double strainDecayBase => 0.5;
+        private double strainDecayBase => 0.15;
+
+        private double multiplier => 15;
+
+        private double power => 1;
 
         private double strainDecay(double ms) => Math.Pow(strainDecayBase, ms / 1000);
 
@@ -32,7 +36,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         protected override double StrainValueAt(DifficultyHitObject current)
         {
             currentStrain *= strainDecay(current.DeltaTime);
-            currentStrain += HybridEvaluator.EvaluateDifficultyOf(current, withSliders);
+            currentStrain += Math.Pow(HybridEvaluator.EvaluateDifficultyOf(current, withSliders), power) * multiplier;
 
             return currentStrain;
         }

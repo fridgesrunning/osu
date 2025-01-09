@@ -143,7 +143,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                 if (osuCurrObj.Angle != null && osuLastObj.Angle != null && osuLastLastObj.Angle != null)
                 shortFlowPenalty = Math.Min(1, (
                0.5 *  Math.Pow(DifficultyCalculationUtils.Smootherstep(Math.Min(osuCurrObj.Angle.Value, osuLastObj.Angle.Value), 180, 140), 0.9) +
-                0.5 * Math.Pow(DifficultyCalculationUtils.Smootherstep(Math.Max(osuCurrObj.LazyJumpDistance, osuLastObj.LazyJumpDistance), 0, 150), 0.9))
+                0.5 * Math.Pow(DifficultyCalculationUtils.Smootherstep(Math.Max(osuCurrObj.LazyJumpDistance, osuLastObj.LazyJumpDistance), 0, 175), 0.9))
                * 1.0 / 0.9 );
 
             return aimStrain * Math.Pow(shortFlowPenalty, 1.5);

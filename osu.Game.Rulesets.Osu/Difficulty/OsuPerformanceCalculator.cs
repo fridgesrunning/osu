@@ -14,7 +14,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 {
     public class OsuPerformanceCalculator : PerformanceCalculator
     {
-        public const double PERFORMANCE_BASE_MULTIPLIER = 1.28; // This is being adjusted to keep the final pp value scaled around what it used to be when changing things.
+        public const double PERFORMANCE_BASE_MULTIPLIER = 1.4; // This is being adjusted to keep the final pp value scaled around what it used to be when changing things.
 
         private bool usingClassicSliderAccuracy;
 
@@ -110,22 +110,24 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 effectiveMissCount = Math.Min(effectiveMissCount + countOk * okMultiplier + countMeh * mehMultiplier, totalHits);
             }
 
-            double aimValue = computeAimValue(score, osuAttributes);
+            double aimValue = computeAimValue(score, osuAttributes);    
             double speedValue = computeSpeedValue(score, osuAttributes);
             double accuracyValue = computeAccuracyValue(score, osuAttributes);
             double flashlightValue = computeFlashlightValue(score, osuAttributes);
+            double hybridRating = computeHybridRating(score, osuAttributes);
             double totalValue =
                 Math.Pow(
-                    Math.Pow(aimValue, 1.3) +
-                    Math.Pow(speedValue, 1.3) +
-                    Math.Pow(accuracyValue, 1.3) +
-                    Math.Pow(flashlightValue, 1.3), 1.0 / 1.3 
+                    Math.Pow(aimValue, 1.9 - hybridRating) +
+                    Math.Pow(speedValue, 1.9 - hybridRating) +
+                    Math.Pow(accuracyValue, 1.9 - hybridRating) +
+                    Math.Pow(flashlightValue, 1.9 - hybridRating), 1.0 / (1.9 - hybridRating)
                 ) * multiplier;
 
             return new OsuPerformanceAttributes
             {
                 Aim = aimValue,
                 Speed = speedValue,
+                Hybrid = hybridRating,
                 Accuracy = accuracyValue,
                 Flashlight = flashlightValue,
                 EffectiveMissCount = effectiveMissCount,
@@ -133,6 +135,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             };
         }
 
+        private double computeHybridRating(ScoreInfo score, OsuDifficultyAttributes attributes)
+        {
+            return attributes.HybridRating;
+        }
         private double computeAimValue(ScoreInfo score, OsuDifficultyAttributes attributes)
         {
             if (score.Mods.Any(h => h is OsuModAutopilot))

@@ -18,7 +18,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
         private const double single_spacing_threshold = OsuDifficultyHitObject.NORMALISED_DIAMETER * 1.5; // 1.50 circles distance between centers
         private const double min_speed_bonus = 200; // 200 BPM 1/4th
         private const double speed_balancing_factor = 40;
-        private const double distance_multiplier = 0.75;
+        private const double distance_multiplier = 1;
 
         /// <summary>
         /// Evaluates the difficulty of tapping the current object, based on:
@@ -57,7 +57,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
                 // Add additional scaling bonus for streams/bursts higher than 350bpm
             if (DifficultyCalculationUtils.MillisecondsToBPM(strainTime) > 350)
-                speedBonus += 10 * Math.Pow((DifficultyCalculationUtils.BPMToMilliseconds(350) - strainTime) / speed_balancing_factor, 2.4);
+                speedBonus += 15 * Math.Pow((DifficultyCalculationUtils.BPMToMilliseconds(350) - strainTime) / speed_balancing_factor, 2.4);
 
             double travelDistance = osuPrevObj?.TravelDistance ?? 0;
             double distance = travelDistance + osuCurrObj.MinimumJumpDistance;

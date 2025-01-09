@@ -52,14 +52,25 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             SpeedEvaluator.EvaluateDifficultyOf(osuL3Obj) +
             SpeedEvaluator.EvaluateDifficultyOf(osuL4Obj)) / 5;
 
-            double currRatio = Math.Max(AimAverage, SpeedAverage) / Math.Min(AimAverage, SpeedAverage);
+            double currRatio = Math.Sqrt(Math.Max(AimAverage, SpeedAverage)) / Math.Sqrt(Math.Min(AimAverage, SpeedAverage));
 
-            double lastRatio = Math.Max(LastAimAverage, LastSpeedAverage) / Math.Min(LastAimAverage, LastSpeedAverage);
+            double lastRatio = Math.Sqrt(Math.Max(LastAimAverage, LastSpeedAverage)) / Math.Sqrt(Math.Min(LastAimAverage, LastSpeedAverage));
 
             double RatioChange = Math.Max(currRatio, lastRatio) / Math.Min(currRatio, lastRatio);
 
+            double shortFlowPenalty = 1;
 
-            return RatioChange;
+            if (osuCurrObj.Angle != null && osuLastObj.Angle != null && osuLastLastObj.Angle != null)
+                shortFlowPenalty = Math.Min(1, (
+               0.5 *  Math.Pow(DifficultyCalculationUtils.Smootherstep(Math.Min(osuCurrObj.Angle.Value, osuLastObj.Angle.Value), 180, 140), 0.9) +
+                0.5 * Math.Pow(DifficultyCalculationUtils.Smootherstep(Math.Max(osuCurrObj.LazyJumpDistance, osuLastObj.LazyJumpDistance), 0, 300), 0.9))
+               * 1.0 / 0.9 );
+
+               RatioChange *= shortFlowPenalty;
+
+            if (RatioChange < 1000)
+            return RatioChange * Math.Min(AimAverage, SpeedAverage / 10);
+            return 0;
             
         }
 

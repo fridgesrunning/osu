@@ -10,6 +10,7 @@ using System.Linq;
 
 namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 {
+    // Strain for both aim and speed is evaluated here separately with more buildup because I don't know how to pull them
     public class Hybrid : OsuStrainSkill
     {
         public Hybrid(Mod[] mods)
@@ -27,9 +28,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
         protected override double StrainValueAt(DifficultyHitObject current)
         {
-            
+            currentStrain += 1;
 
-            return 1;
+            return currentStrain;
         }
 
         public double RelevantNoteCount()

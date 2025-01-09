@@ -16,10 +16,10 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
     public class Speed : OsuStrainSkill
     {
         private const double single_spacing_threshold = OsuDifficultyHitObject.NORMALISED_DIAMETER * 1.5;
-        private const double distance_multiplier = 0.5;
+        private const double distance_multiplier = 0.75;
         private double totalMultiplier => 1;
         private double burstMultiplier => 1.8;
-        private double staminaMultiplier => 0.11;
+        private double staminaMultiplier => 0.105;
 
         private double currentBurstStrain;
         private double currentStaminaStrain;

@@ -83,7 +83,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             aimRatingNoSliders *= Math.Cbrt(aimNoSlidersLengthBonus);
 
             double speedLengthBonus = 1.0 + Math.Min(0.25, speedRelevantObjectCount / 1100.0) +
-                                      (speedRelevantObjectCount > 300 ? 0.6 * Math.Log10(speedRelevantObjectCount / 300.0) : 0.0);
+                                      (speedRelevantObjectCount > 275 ? 0.7 * Math.Log10(speedRelevantObjectCount / 275.0) : 0.0);
             speedRating *= Math.Cbrt(speedLengthBonus);
 
             double sliderFactor = aimRating > 0 ? aimRatingNoSliders / aimRating : 1;
@@ -97,9 +97,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double basePerformance =
                 Math.Pow(
-                    Math.Pow(baseAimPerformance, 1.1) +
-                    Math.Pow(baseSpeedPerformance, 1.1) +
-                    Math.Pow(baseFlashlightPerformance, 1.1), 1.0 / 1.1
+                    Math.Pow(baseAimPerformance, 1.3) +
+                    Math.Pow(baseSpeedPerformance, 1.3) +
+                    Math.Pow(baseFlashlightPerformance, 1.3), 1.0 / 1.3
                 );
 
             double starRating = basePerformance > 0.00001

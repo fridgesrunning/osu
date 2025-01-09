@@ -18,7 +18,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
         private const double single_spacing_threshold = OsuDifficultyHitObject.NORMALISED_DIAMETER * 1.5; // 1.50 circles distance between centers
         private const double min_speed_bonus = 200; // 200 BPM 1/4th
         private const double speed_balancing_factor = 40;
-        private const double distance_multiplier = 0.5;
+        private const double distance_multiplier = 0.75;
 
         /// <summary>
         /// Evaluates the difficulty of tapping the current object, based on:

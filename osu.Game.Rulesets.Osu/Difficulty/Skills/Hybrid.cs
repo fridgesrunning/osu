@@ -13,10 +13,13 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
     // Strain for both aim and speed is evaluated here separately with more buildup because I don't know how to pull them
     public class Hybrid : OsuStrainSkill
     {
-        public Hybrid(Mod[] mods)
+        public Hybrid(Mod[] mods, bool withSliders)
             : base(mods)
         {
+            this.withSliders = withSliders;
         }
+
+        private readonly bool withSliders;
 
         private double currentStrain;
 
@@ -28,7 +31,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
         protected override double StrainValueAt(DifficultyHitObject current)
         {
-            currentStrain += 1;
+            currentStrain *= strainDecay(current.DeltaTime);
+            currentStrain += HybridEvaluator.EvaluateDifficultyOf(current, withSliders);
 
             return currentStrain;
         }

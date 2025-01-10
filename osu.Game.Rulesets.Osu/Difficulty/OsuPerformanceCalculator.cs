@@ -244,9 +244,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             // Scale the speed value with accuracy and OD.
             speedValue *= (0.95 + Math.Pow(attributes.OverallDifficulty, 2) / 750) * Math.Pow((accuracy + relevantAccuracy) / 2.0, (14.5 - attributes.OverallDifficulty) / 2);
 
-            // Scale the speed value with # of 50s to punish doubletapping.
-            speedValue *= Math.Pow(0.99, countMeh < totalHits / 500.0 ? 0 : countMeh - totalHits / 500.0);
-
             return speedValue;
         }
 
@@ -411,6 +408,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         // to make it more punishing on maps with lower amount of hard sections.
         private double calculateMissPenalty(double missCount, double difficultStrainCount) => 0.96 / ((missCount / (4 * Math.Pow(Math.Log(difficultStrainCount), 0.94))) + 1);
         private double getComboScalingFactor(OsuDifficultyAttributes attributes) => attributes.MaxCombo <= 0 ? 1.0 : Math.Min(Math.Pow(scoreMaxCombo, 0.8) / Math.Pow(attributes.MaxCombo, 0.8), 1.0);
+        private int totalSuccessfulHits => countGreat + countOk + countMeh;
         private int totalHits => countGreat + countOk + countMeh + countMiss;
         private int totalImperfectHits => countOk + countMeh + countMiss;
     }

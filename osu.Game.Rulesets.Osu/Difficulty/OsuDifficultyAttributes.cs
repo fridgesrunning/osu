@@ -81,6 +81,24 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         public double OverallDifficulty { get; set; }
 
         /// <summary>
+        /// The perceived hit window for a GREAT hit inclusive of rate-adjusting mods (DT/HT/etc).
+        /// </summary>
+        [JsonProperty("great_hit_window")]
+        public double GreatHitWindow { get; set; }
+
+        /// <summary>
+        /// The perceived hit window for an OK hit inclusive of rate-adjusting mods (DT/HT/etc).
+        /// </summary>
+        [JsonProperty("ok_hit_window")]
+        public double OkHitWindow { get; set; }
+
+        /// <summary>
+        /// The perceived hit window for a MEH hit inclusive of rate-adjusting mods (DT/HT/etc).
+        /// </summary>
+        [JsonProperty("meh_hit_window")]
+        public double MehHitWindow { get; set; }
+
+        /// <summary>
         /// The beatmap's drain rate. This doesn't scale with rate-adjusting mods.
         /// </summary>
         public double DrainRate { get; set; }
@@ -111,6 +129,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             yield return (ATTRIB_ID_OVERALL_DIFFICULTY, OverallDifficulty);
             yield return (ATTRIB_ID_APPROACH_RATE, ApproachRate);
             yield return (ATTRIB_ID_DIFFICULTY, StarRating);
+            yield return (ATTRIB_ID_GREAT_HIT_WINDOW, GreatHitWindow);
+
 
             if (ShouldSerializeFlashlightDifficulty())
                 yield return (ATTRIB_ID_FLASHLIGHT, FlashlightDifficulty);
@@ -121,6 +141,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             yield return (ATTRIB_ID_SPEED_DIFFICULT_STRAIN_COUNT, SpeedDifficultStrainCount);
             yield return (ATTRIB_ID_SPEED_NOTE_COUNT, SpeedNoteCount);
             yield return (ATTRIB_ID_AIM_DIFFICULT_SLIDER_COUNT, AimDifficultSliderCount);
+
+            yield return (ATTRIB_ID_OK_HIT_WINDOW, OkHitWindow);
+            yield return (ATTRIB_ID_MEH_HIT_WINDOW, MehHitWindow);
         }
 
         public override void FromDatabaseAttributes(IReadOnlyDictionary<int, double> values, IBeatmapOnlineInfo onlineInfo)
@@ -132,6 +155,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             OverallDifficulty = values[ATTRIB_ID_OVERALL_DIFFICULTY];
             ApproachRate = values[ATTRIB_ID_APPROACH_RATE];
             StarRating = values[ATTRIB_ID_DIFFICULTY];
+            GreatHitWindow = values[ATTRIB_ID_GREAT_HIT_WINDOW];
             FlashlightDifficulty = values.GetValueOrDefault(ATTRIB_ID_FLASHLIGHT);
             SliderFactor = values[ATTRIB_ID_SLIDER_FACTOR];
             AimDifficultStrainCount = values[ATTRIB_ID_AIM_DIFFICULT_STRAIN_COUNT];
@@ -139,6 +163,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             SpeedNoteCount = values[ATTRIB_ID_SPEED_NOTE_COUNT];
             AimDifficultSliderCount = values[ATTRIB_ID_AIM_DIFFICULT_SLIDER_COUNT];
 			HybridRating = values[ATTRIB_ID_HYBRID_RATING];
+            OkHitWindow = values[ATTRIB_ID_OK_HIT_WINDOW];
+            MehHitWindow = values[ATTRIB_ID_MEH_HIT_WINDOW];
             DrainRate = onlineInfo.DrainRate;
             HitCircleCount = onlineInfo.CircleCount;
             SliderCount = onlineInfo.SliderCount;

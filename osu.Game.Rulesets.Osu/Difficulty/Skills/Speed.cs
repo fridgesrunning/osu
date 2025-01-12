@@ -6,6 +6,7 @@ using osu.Game.Rulesets.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.Difficulty.Evaluators;
 using osu.Game.Rulesets.Osu.Difficulty.Preprocessing;
+using osu.Game.Rulesets.Osu.Objects;
 using System.Linq;
 
 namespace osu.Game.Rulesets.Osu.Difficulty.Skills
@@ -49,6 +50,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             currentStaminaStrain += StaminaEvaluator.EvaluateDifficultyOf(current) * staminaMultiplier;
 
             double combinedStrain = currentBurstStrain + currentStaminaStrain;
+
+            if (current.BaseObject is Slider)
+                SliderStrains.Add(combinedStrain);
 
             return combinedStrain;
         }

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Game.Rulesets.Difficulty;
+using osu.Game.Rulesets.Difficulty.Utils;
 using osu.Game.Rulesets.Osu.Difficulty.Skills;
 using osu.Game.Rulesets.Osu.Mods;
 using osu.Game.Rulesets.Scoring;
@@ -175,8 +176,12 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double aimValue = OsuStrainSkill.DifficultyToPerformance(aimDifficulty);
 
+
             if (effectiveMissCount > 0)
-                aimValue *= calculateMissPenalty(effectiveMissCount, attributes.AimDifficultStrainCount);
+            {
+                double estimatedSliderbreaks = calculateEstimatedSliderbreaks(attributes.AimTopWeightedSliderFactor, attributes);
+                aimValue *= calculateMissPenalty(effectiveMissCount + estimatedSliderbreaks, attributes.AimDifficultStrainCount);
+            }
 
             double approachRateFactor = 0.0;
             if (attributes.ApproachRate > 10.33)
@@ -217,12 +222,15 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             if (effectiveMissCount > 0)
             {
-                speedValue *= (0.5 * Math.Pow(calculateMissPenalty(effectiveMissCount, attributes.SpeedDifficultStrainCount), 1.5) + 0.5 * Math.Sqrt(calculateMissPenalty(effectiveMissCount, attributes.SpeedDifficultStrainCount)));
-                speedHighDeviationMultiplier = Math.Pow(speedHighDeviationMultiplier, calculateMissPenalty(effectiveMissCount, attributes.SpeedDifficultStrainCount));
+                double estimatedSliderbreaks = calculateEstimatedSliderbreaks(attributes.SpeedTopWeightedSliderFactor, attributes);
+                speedValue *= (0.5 * Math.Pow(calculateMissPenalty(effectiveMissCount + estimatedSliderbreaks, attributes.SpeedDifficultStrainCount), 1.5) + 0.5 * Math.Sqrt(calculateMissPenalty(effectiveMissCount + estimatedSliderbreaks, attributes.SpeedDifficultStrainCount)));
+                speedHighDeviationMultiplier = Math.Pow(speedHighDeviationMultiplier, calculateMissPenalty(effectiveMissCount + estimatedSliderbreaks, attributes.SpeedDifficultStrainCount));
             }
+
+
+
             speedValue *= speedHighDeviationMultiplier;
             
-            Console.WriteLine(speedHighDeviationMultiplier);
 
             double approachRateFactor = 0.0;
             if (attributes.ApproachRate > 10.33)
@@ -326,8 +334,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             if (totalSuccessfulHits == 0)
                 return null;
 
-            double aimValue = computeAimValue(score, attributes);    
-            double speedValue = computeSpeedValue(score, attributes);
+            double aimValue = OsuStrainSkill.DifficultyToPerformance(attributes.AimDifficulty);
+            double speedValue = OsuStrainSkill.DifficultyToPerformance(attributes.SpeedDifficulty);
 
             // Calculate accuracy assuming the worst case scenario
             double speedNoteCount = attributes.SpeedNoteCount;
@@ -374,6 +382,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                                  / (deviation * SpecialFunctions.Erf(hitWindowOk / (Math.Sqrt(2) * deviation)));
 
             deviation *= Math.Sqrt(1 - randomValue);
+
 
             // Value deviation approach as greatCount approaches 0
             double limitValue = hitWindowOk / Math.Sqrt(3);
@@ -422,6 +431,17 @@ namespace osu.Game.Rulesets.Osu.Difficulty
         // to make it more punishing on maps with lower amount of hard sections.
         private double calculateMissPenalty(double missCount, double difficultStrainCount) => 0.96 / ((missCount / (4 * Math.Pow(Math.Log(difficultStrainCount), 0.94))) + 1);
         private double getComboScalingFactor(OsuDifficultyAttributes attributes) => attributes.MaxCombo <= 0 ? 1.0 : Math.Min(Math.Pow(scoreMaxCombo, 0.8) / Math.Pow(attributes.MaxCombo, 0.8), 1.0);
+
+         private double calculateEstimatedSliderbreaks(double topWeightedSliderFactor, OsuDifficultyAttributes attributes)
+        {
+            if (!usingClassicSliderAccuracy)
+                return 0;
+
+            double missedComboPercent = 1.0 - (double)scoreMaxCombo / attributes.MaxCombo;
+            double estimatedSliderbreaks = countMiss * topWeightedSliderFactor * DifficultyCalculationUtils.Logistic(missedComboPercent, 0.33, 15);
+            return Math.Min(countMeh + countOk, estimatedSliderbreaks);
+        }
+
         private int totalSuccessfulHits => countGreat + countOk + countMeh;
         private int totalHits => countGreat + countOk + countMeh + countMiss;
         private int totalImperfectHits => countOk + countMeh + countMiss;

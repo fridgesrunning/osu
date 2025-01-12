@@ -113,7 +113,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
                 effectiveMissCount = Math.Min(effectiveMissCount + countOk * okMultiplier + countMeh * mehMultiplier, totalHits);
             }
 
-            speedDeviation = calculateSpeedDeviation(osuAttributes);
+            speedDeviation = calculateSpeedDeviation(score, osuAttributes);
 
             double aimValue = computeAimValue(score, osuAttributes);    
             double speedValue = computeSpeedValue(score, osuAttributes);
@@ -211,8 +211,18 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double speedValue = OsuStrainSkill.DifficultyToPerformance(attributes.SpeedDifficulty);
 
+            double missPenalty = 1;
+
+            double speedHighDeviationMultiplier = calculateSpeedHighDeviationNerf(attributes);
+
             if (effectiveMissCount > 0)
+            {
                 speedValue *= (0.5 * Math.Pow(calculateMissPenalty(effectiveMissCount, attributes.SpeedDifficultStrainCount), 1.5) + 0.5 * Math.Sqrt(calculateMissPenalty(effectiveMissCount, attributes.SpeedDifficultStrainCount)));
+                speedHighDeviationMultiplier = Math.Pow(speedHighDeviationMultiplier, calculateMissPenalty(effectiveMissCount, attributes.SpeedDifficultStrainCount));
+            }
+            speedValue *= speedHighDeviationMultiplier;
+            
+            Console.WriteLine(speedHighDeviationMultiplier);
 
             double approachRateFactor = 0.0;
             if (attributes.ApproachRate > 10.33)
@@ -311,14 +321,18 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             return flashlightValue;
         }
 
-        private double? calculateSpeedDeviation(OsuDifficultyAttributes attributes)
+        private double? calculateSpeedDeviation(ScoreInfo score, OsuDifficultyAttributes attributes)
         {
             if (totalSuccessfulHits == 0)
                 return null;
 
+            double aimValue = computeAimValue(score, attributes);    
+            double speedValue = computeSpeedValue(score, attributes);
+
             // Calculate accuracy assuming the worst case scenario
             double speedNoteCount = attributes.SpeedNoteCount;
             speedNoteCount += (totalHits - attributes.SpeedNoteCount) * 0.1;
+            speedNoteCount += attributes.AimDifficultSliderCount * (aimValue / speedValue);
 
             // Assume worst case: all mistakes were on speed notes
             double relevantCountMiss = Math.Min(countMiss, speedNoteCount);

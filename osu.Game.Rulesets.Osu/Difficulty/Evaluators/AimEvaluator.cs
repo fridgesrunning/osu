@@ -42,6 +42,8 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             double massiveDistanceBonus = 500 * Math.Pow(osuCurrObj.LazyJumpDistance / 500, 1.5);
 
+            massiveDistanceBonus *= DifficultyCalculationUtils.Smootherstep(DifficultyCalculationUtils.BPMToMilliseconds(osuCurrObj.StrainTime, 2), 325, 250);
+
             double currVelocity = Math.Max(osuCurrObj.LazyJumpDistance, massiveDistanceBonus) / osuCurrObj.StrainTime;
 
             // But if the last object is a slider, then we extend the travel velocity through the slider into the current object.

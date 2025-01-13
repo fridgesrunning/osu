@@ -121,10 +121,15 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double accuracyValue = computeAccuracyValue(score, osuAttributes);
             double flashlightValue = computeFlashlightValue(score, osuAttributes);
             double hybridRating = computeHybridRating(score, osuAttributes);
+            double MinPenalty = aimValue + speedValue;
+
+            if (hybridRating < 0.50)
+            MinPenalty = Math.Min(aimValue, speedValue) * (1 - (0.50 - hybridRating));
+
             double totalValue =
                 Math.Pow(
-                    Math.Pow(aimValue, 1.9 - hybridRating) +
-                    Math.Pow(speedValue, 1.9 - hybridRating) +
+                    Math.Pow(Math.Max(aimValue, speedValue), 1.9 - hybridRating) +
+                    Math.Pow(Math.Min(MinPenalty, Math.Min(aimValue, speedValue)), 1.9 - hybridRating) +
                     Math.Pow(accuracyValue, 1.9 - hybridRating) +
                     Math.Pow(flashlightValue, 1.9 - hybridRating), 1.0 / (1.9 - hybridRating)
                 ) * multiplier;

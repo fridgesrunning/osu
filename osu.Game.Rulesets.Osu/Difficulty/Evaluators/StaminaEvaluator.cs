@@ -29,11 +29,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
                 // Add additional scaling bonus for streams/bursts higher than 250bpm
             if (DifficultyCalculationUtils.MillisecondsToBPM(strainTime) > 250)
-                speedBonus += 0.5 * Math.Pow((DifficultyCalculationUtils.BPMToMilliseconds(250) - strainTime) / 40, 2);
+                speedBonus += 0.5 * Math.Pow((DifficultyCalculationUtils.BPMToMilliseconds(250) - strainTime) / 40, 2.2);
 
                 // Add additional scaling bonus for streams/bursts higher than 300bpm
             if (DifficultyCalculationUtils.MillisecondsToBPM(strainTime) > 300)
-                speedBonus += Math.Pow((DifficultyCalculationUtils.BPMToMilliseconds(300) - strainTime) / 40, 2);
+                speedBonus += 0.5 * Math.Pow((DifficultyCalculationUtils.BPMToMilliseconds(300) - strainTime) / 40, 2);
 
                 // Add additional scaling bonus for streams/bursts higher than 350bpm
             if (DifficultyCalculationUtils.MillisecondsToBPM(strainTime) > 350)

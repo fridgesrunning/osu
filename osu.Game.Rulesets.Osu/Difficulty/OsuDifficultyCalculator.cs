@@ -83,16 +83,16 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double speedRelevantObjectCount = ((OsuStrainSkill)skills[2]).CountRelevantObjects();
             double hybridRelevantObjectCount = ((OsuStrainSkill)skills[3]).CountRelevantObjects();
 
-            double speedLengthBonus = 1.0 + Math.Min(0.2, speedRelevantObjectCount / 1200.0) +
-                                      (speedRelevantObjectCount > 400 ? 0.5 * Math.Log10(speedRelevantObjectCount / 400.0) : 0.0);
+            double speedLengthBonus = 1.0 + Math.Min(0.2, speedRelevantObjectCount / 1170.0) +
+                                      (speedRelevantObjectCount > 390 ? 0.5 * Math.Log10(speedRelevantObjectCount / 390.0) : 0.0);
             speedRating *= Math.Cbrt(speedLengthBonus);
 
             double hybridLengthBonus = 1.0 + Math.Min(0.1,  hybridRelevantObjectCount / 2200.0) +
                                     (hybridRelevantObjectCount > 220.0 ? 0.23 * Math.Log10(hybridRelevantObjectCount / 220.0) : 0);
             hybridRating *= Math.Cbrt(hybridLengthBonus);
 
-             double aimLengthBonus = 1.0 + Math.Min(1.0, aimRelevantObjectCount / 300.0) +
-                                    (aimRelevantObjectCount > 300.0 ? 2.0 * Math.Log10(aimRelevantObjectCount / 300.0) : 0);
+             double aimLengthBonus = 1.0 + Math.Min(1.0, aimRelevantObjectCount / 270.0) +
+                                    (aimRelevantObjectCount > 270.0 ? 2.0 * Math.Log10(aimRelevantObjectCount / 270.0) : 0);
             aimLengthBonus /= Math.Pow(Math.Cbrt(speedLengthBonus), speedRating / aimRating);
             aimRating *= Math.Cbrt(aimLengthBonus);
 
@@ -104,6 +104,9 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
 
             hybridRating = 2 * Math.Min(0.4, 1.5 * Math.Pow(hybridRating / Math.Max(aimRating, speedRating), 3));
+
+            if (hybridRating < 0.50)
+            hybridRating = Math.Pow(hybridRating, 1 + (1 - (2 * hybridRating)));
 
             double sliderFactor = aimRating > 0 ? aimRatingNoSliders / aimRating : 1;
 

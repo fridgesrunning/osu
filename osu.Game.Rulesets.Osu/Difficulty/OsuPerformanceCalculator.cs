@@ -226,7 +226,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             }
 
 
-
+            Console.WriteLine(speedHighDeviationMultiplier);
             speedValue *= speedHighDeviationMultiplier;
             
 
@@ -338,7 +338,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             // Calculate accuracy assuming the worst case scenario
             double speedNoteCount = attributes.SpeedNoteCount;
             speedNoteCount += (totalHits - attributes.SpeedNoteCount) * 0.1;
-            speedNoteCount += attributes.AimDifficultSliderCount * (aimValue / speedValue);
+            speedNoteCount += attributes.AimDifficultStrainCount * 2 * (aimValue / speedValue);
 
             // Assume worst case: all mistakes were on speed notes
             double relevantCountMiss = Math.Min(countMiss, speedNoteCount);

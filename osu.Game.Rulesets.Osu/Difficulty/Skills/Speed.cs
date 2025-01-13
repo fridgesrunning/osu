@@ -18,7 +18,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
     {
         private const double single_spacing_threshold = OsuDifficultyHitObject.NORMALISED_DIAMETER * 1.5;
         private const double distance_multiplier = 1;
-        private double totalMultiplier => 1;
+        private double totalMultiplier => 1.075;
         private double burstMultiplier => 1.9;
         private double staminaMultiplier => 0.1;
 
@@ -54,7 +54,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
             if (current.BaseObject is Slider)
                 SliderStrains.Add(combinedStrain);
 
-            return combinedStrain;
+            return combinedStrain * totalMultiplier;
         }
 
         public double RelevantNoteCount()

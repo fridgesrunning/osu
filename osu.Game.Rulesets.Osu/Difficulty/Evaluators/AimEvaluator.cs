@@ -153,7 +153,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                * 1.0 / 0.75 );
 
                 if (Math.Max(osuCurrObj.StrainTime, osuLastObj.StrainTime) < 1.25 * Math.Min(osuCurrObj.StrainTime, osuLastObj.StrainTime))
-               shortFlowWeight = DifficultyCalculationUtils.Smootherstep(DifficultyCalculationUtils.BPMToMilliseconds(osuCurrObj.StrainTime), 175, 250);
+               shortFlowWeight = DifficultyCalculationUtils.Smootherstep(DifficultyCalculationUtils.BPMToMilliseconds(osuCurrObj.StrainTime), 175, 225);
 
 
             return aimStrain * Math.Pow(shortFlowPenalty, shortFlowWeight);

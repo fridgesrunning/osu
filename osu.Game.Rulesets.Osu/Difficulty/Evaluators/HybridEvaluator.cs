@@ -60,13 +60,18 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             double shortFlowPenalty = 1;
 
+            double shortFlowWeight = 0;
+
             if (osuCurrObj.Angle != null && osuLastObj.Angle != null && osuLastLastObj.Angle != null)
                 shortFlowPenalty = Math.Min(1, (
                0.5 *  Math.Pow(DifficultyCalculationUtils.Smootherstep(Math.Min(osuCurrObj.Angle.Value, osuLastObj.Angle.Value), 180, 140), 0.9) +
                 0.5 * Math.Pow(DifficultyCalculationUtils.Smootherstep(Math.Max(osuCurrObj.LazyJumpDistance, osuLastObj.LazyJumpDistance), 0, 300), 0.9))
                * 1.0 / 0.9 );
 
-               RatioChange *= shortFlowPenalty;
+               if (Math.Max(osuCurrObj.StrainTime, osuLastObj.StrainTime) < 1.25 * Math.Min(osuCurrObj.StrainTime, osuLastObj.StrainTime))
+               shortFlowWeight = 1.1 * DifficultyCalculationUtils.Smootherstep(DifficultyCalculationUtils.BPMToMilliseconds(osuCurrObj.StrainTime), 200, 275);
+
+               RatioChange *= Math.Pow(shortFlowPenalty, shortFlowWeight);
 
             if (RatioChange < 1000)
             return RatioChange * Math.Min(AimAverage, SpeedAverage / 10);

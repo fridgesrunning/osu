@@ -4,6 +4,7 @@
 using System;
 using System.Linq; 
 using osu.Game.Rulesets.Difficulty.Preprocessing;
+using osu.Game.Rulesets.Osu.Difficulty.Preprocessing;
 using osu.Game.Rulesets.Mods;
 using osu.Game.Rulesets.Osu.Difficulty.Evaluators;
 using osu.Game.Rulesets.Osu.Objects;
@@ -25,7 +26,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
         private double currentStrain;
 
-        private double skillMultiplier => 24;
+        private double skillMultiplier => 13.25;
         private double strainDecayBase => 0.175;
 
         private double strainDecay(double ms) => Math.Pow(strainDecayBase, ms / 1000);
@@ -34,6 +35,18 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
         protected override double StrainValueAt(DifficultyHitObject current)
         {
+            var osuCurrObj = (OsuDifficultyHitObject)current;
+
+            // d/t^(2 + some function of t) compensation, check 2731312
+
+            double mitigation = (osuCurrObj.LazyJumpDistance / Math.Pow(osuCurrObj.StrainTime, 2)) /
+            (( Math.Pow(strainDecayBase, osuCurrObj.StrainTime / 1000)/ (1 - Math.Pow(strainDecayBase, osuCurrObj.StrainTime / 1000) )) * (osuCurrObj.LazyJumpDistance / osuCurrObj.StrainTime));
+
+            if (mitigation == mitigation)
+            {
+             currentStrain *= Math.Min(mitigation, 5) * 573.7336; // about 1x multiplier at 0ms https://www.desmos.com/calculator/wlorqfyf8j
+            }
+            
             currentStrain *= strainDecay(current.DeltaTime);
             currentStrain += AimEvaluator.EvaluateDifficultyOf(current, withSliders) * skillMultiplier;
 

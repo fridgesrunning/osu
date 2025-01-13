@@ -83,22 +83,26 @@ namespace osu.Game.Rulesets.Osu.Difficulty
             double speedRelevantObjectCount = ((OsuStrainSkill)skills[2]).CountRelevantObjects();
             double hybridRelevantObjectCount = ((OsuStrainSkill)skills[3]).CountRelevantObjects();
 
-            double aimLengthBonus = 1.0 + Math.Min(1.0, aimRelevantObjectCount / 300.0) +
-                                    (aimRelevantObjectCount > 300.0 ? 2.0 * Math.Log10(aimRelevantObjectCount / 300.0) : 0);
-            aimRating *= Math.Cbrt(aimLengthBonus);
-
-            double aimNoSlidersLengthBonus = 1.0 + Math.Min(1.0, aimNoSlidersRelevantObjectCount / 300.0) +
-                                             (aimNoSlidersRelevantObjectCount > 300.0 ? 2.0 * Math.Log10(aimNoSlidersRelevantObjectCount / 300.0) : 0);
-            aimRatingNoSliders *= Math.Cbrt(aimNoSlidersLengthBonus);
-
-            double speedLengthBonus = 1.0 + Math.Min(0.2, speedRelevantObjectCount / 900.0) +
-                                      (speedRelevantObjectCount > 300 ? 0.5 * Math.Log10(speedRelevantObjectCount / 300.0) : 0.0);
+            double speedLengthBonus = 1.0 + Math.Min(0.2, speedRelevantObjectCount / 1200.0) +
+                                      (speedRelevantObjectCount > 400 ? 0.5 * Math.Log10(speedRelevantObjectCount / 400.0) : 0.0);
             speedRating *= Math.Cbrt(speedLengthBonus);
 
-            double hybridLengthBonus = 1.0 + Math.Min(0.5, hybridRelevantObjectCount / 800.0) +
-                                    (hybridRelevantObjectCount > 400.0 ? 0.5 * Math.Log10(hybridRelevantObjectCount / 400.0) : 0);
+            double hybridLengthBonus = 1.0 + Math.Min(0.1,  hybridRelevantObjectCount / 2200.0) +
+                                    (hybridRelevantObjectCount > 220.0 ? 0.23 * Math.Log10(hybridRelevantObjectCount / 220.0) : 0);
             hybridRating *= Math.Cbrt(hybridLengthBonus);
+
+             double aimLengthBonus = 1.0 + Math.Min(1.0, aimRelevantObjectCount / 300.0) +
+                                    (aimRelevantObjectCount > 300.0 ? 2.0 * Math.Log10(aimRelevantObjectCount / 300.0) : 0);
+            aimLengthBonus /= Math.Pow(Math.Cbrt(speedLengthBonus), speedRating / aimRating);
+            aimRating *= Math.Cbrt(aimLengthBonus);
+
+            double aimNoSlidersLengthBonus = 1.0 + Math.Min(1.0, aimNoSlidersRelevantObjectCount / 400.0) +
+                                             (aimNoSlidersRelevantObjectCount > 400.0 ? 2.0 * Math.Log10(aimNoSlidersRelevantObjectCount / 400.0) : 0);
+            aimNoSlidersLengthBonus /= Math.Pow(Math.Cbrt(speedLengthBonus), speedRating / aimRating);
+            aimRatingNoSliders *= Math.Cbrt(aimNoSlidersLengthBonus);
             
+
+
             hybridRating = 2 * Math.Min(0.4, 1.5 * Math.Pow(hybridRating / Math.Max(aimRating, speedRating), 3));
 
             double sliderFactor = aimRating > 0 ? aimRatingNoSliders / aimRating : 1;

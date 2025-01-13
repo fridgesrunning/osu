@@ -216,14 +216,12 @@ namespace osu.Game.Rulesets.Osu.Difficulty
 
             double speedValue = OsuStrainSkill.DifficultyToPerformance(attributes.SpeedDifficulty);
 
-            double missPenalty = 1;
-
             double speedHighDeviationMultiplier = calculateSpeedHighDeviationNerf(attributes);
 
             if (effectiveMissCount > 0)
             {
                 double estimatedSliderbreaks = calculateEstimatedSliderbreaks(attributes.SpeedTopWeightedSliderFactor, attributes);
-                speedValue *= (0.5 * Math.Pow(calculateMissPenalty(effectiveMissCount + estimatedSliderbreaks, attributes.SpeedDifficultStrainCount), 1.5) + 0.5 * Math.Sqrt(calculateMissPenalty(effectiveMissCount + estimatedSliderbreaks, attributes.SpeedDifficultStrainCount)));
+                speedValue *= (0.5 * calculateMissPenalty(effectiveMissCount + estimatedSliderbreaks, attributes.SpeedDifficultStrainCount) + 0.5 * Math.Min(0.96, Math.Sqrt(calculateMissPenalty(effectiveMissCount + estimatedSliderbreaks, attributes.SpeedDifficultStrainCount))));
                 speedHighDeviationMultiplier = Math.Pow(speedHighDeviationMultiplier, calculateMissPenalty(effectiveMissCount + estimatedSliderbreaks, attributes.SpeedDifficultStrainCount));
             }
 

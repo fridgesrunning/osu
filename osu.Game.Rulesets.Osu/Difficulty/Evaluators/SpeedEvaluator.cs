@@ -57,11 +57,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
                 // Add additional scaling bonus for streams/bursts higher than 300bpm
             if (DifficultyCalculationUtils.MillisecondsToBPM(strainTime) > 300)
-                speedBonus += 2 * Math.Pow((DifficultyCalculationUtils.BPMToMilliseconds(300) - strainTime) / speed_balancing_factor, 2);
+                speedBonus += Math.Pow((DifficultyCalculationUtils.BPMToMilliseconds(300) - strainTime) / speed_balancing_factor, 2);
 
                 // Add additional scaling bonus for streams/bursts higher than 350bpm
             if (DifficultyCalculationUtils.MillisecondsToBPM(strainTime) > 350)
-                speedBonus += 2 * Math.Pow((DifficultyCalculationUtils.BPMToMilliseconds(350) - strainTime) / speed_balancing_factor, 2);
+                speedBonus += Math.Pow((DifficultyCalculationUtils.BPMToMilliseconds(350) - strainTime) / speed_balancing_factor, 2);
 
             double travelDistance = osuPrevObj?.TravelDistance ?? 0;
             double distance = travelDistance + osuCurrObj.MinimumJumpDistance;

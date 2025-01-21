@@ -26,26 +26,37 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
 
         private double currentStrain;
 
-        private double skillMultiplier => 25.6;
+        private double bonusStrain;
+
+        private double skillMultiplier => 0.23;
+        private double bonusMultiplier => 40;
+
         private double strainDecayBase => 0.15;
+        private double bonusDecayBase => 0.1;
 
         private readonly List<double> sliderStrains = new List<double>();
 
         private double strainDecay(double ms) => Math.Pow(strainDecayBase, ms / 1000);
+        private double bonusDecay(double ms) => Math.Pow(bonusDecayBase, ms / 1000);
 
-        protected override double CalculateInitialStrain(double time, DifficultyHitObject current) => currentStrain * strainDecay(time - current.Previous(0).StartTime);
+        protected override double CalculateInitialStrain(double time, DifficultyHitObject current) => (currentStrain * strainDecay(time - current.Previous(0).StartTime) + bonusStrain * bonusDecay(time - current.Previous(0).StartTime));
 
         protected override double StrainValueAt(DifficultyHitObject current)
         {
             currentStrain *= strainDecay(current.DeltaTime);
             currentStrain += AimEvaluator.EvaluateDifficultyOf(current, IncludeSliders) * skillMultiplier;
 
+            bonusStrain *= bonusDecay(current.DeltaTime);
+            bonusStrain += AimEvaluator.EvaluateBonusOf(current, IncludeSliders) * bonusMultiplier;
+
+
+
             if (current.BaseObject is Slider)
             {
-                sliderStrains.Add(currentStrain);
+                sliderStrains.Add(currentStrain + bonusStrain);
             }
 
-            return currentStrain;
+            return currentStrain + bonusStrain;
         }
 
         public double GetDifficultSliders()

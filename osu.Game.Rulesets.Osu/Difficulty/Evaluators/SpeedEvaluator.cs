@@ -28,7 +28,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
         /// <item><description>and how easily they can be cheesed.</description></item>
         /// </list>
         /// </summary>
-        public static double EvaluateDifficultyOf(DifficultyHitObject current, IReadOnlyList<Mod> mods)
+        public static double EvaluateDifficultyOf(DifficultyHitObject current)
         {
             if (current.BaseObject is Spinner)
                 return 0;
@@ -59,9 +59,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
             // Max distance bonus is 1 * `distance_multiplier` at single_spacing_threshold
             double distanceBonus = Math.Pow(distance / single_spacing_threshold, 3.95) * distance_multiplier;
-
-            if (mods.OfType<OsuModAutopilot>().Any())
-                distanceBonus = 0;
 
             // Base difficulty with all bonuses
             double difficulty = (1 + speedBonus + distanceBonus) * 1000 / strainTime;

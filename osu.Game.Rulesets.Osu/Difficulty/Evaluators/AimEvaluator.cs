@@ -100,6 +100,24 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
           double aimStrain = currVelocity; // Start strain with regular velocity.
 
+           if (Math.Max(prevVelocity, currVelocity) != 0)
+            {
+                // We want to use the average velocity over the whole object when awarding differences, not the individual jump and slider path velocities.
+                double diffprevVelocity = (osuLastObj.LazyJumpDistance + osuLastLastObj.TravelDistance) / osuLastObj.StrainTime;
+               double diffcurrVelocity = (osuCurrObj.LazyJumpDistance + osuLastObj.TravelDistance) / osuCurrObj.StrainTime;
+
+                // Scale with ratio of difference compared to 0.5 * max dist.
+                double distRatio = Math.Pow(Math.Sin(Math.PI / 2 * Math.Abs(diffprevVelocity - diffcurrVelocity) / Math.Max(diffprevVelocity, diffcurrVelocity)), 2);
+
+                // Reward for % distance up to 125 / strainTime for overlaps where velocity is still changing.
+                double overlapVelocityBuff = Math.Min(diameter * 1.25 / Math.Min(osuCurrObj.StrainTime, osuLastObj.StrainTime), Math.Abs(diffprevVelocity - diffcurrVelocity));
+
+                velocityChangeBonus = overlapVelocityBuff * distRatio;
+
+                // Penalize for rhythm changes.
+                velocityChangeBonus *= Math.Pow(Math.Min(osuCurrObj.StrainTime, osuLastObj.StrainTime) / Math.Max(osuCurrObj.StrainTime, osuLastObj.StrainTime), 2);
+            }
+
             if (Math.Max(osuCurrObj.StrainTime, osuLastObj.StrainTime) < 1.25 * Math.Min(osuCurrObj.StrainTime, osuLastObj.StrainTime)) // If rhythms are the same.
             {
                 if (osuCurrObj.Angle != null && osuLastObj.Angle != null)
@@ -107,6 +125,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                     double currAngle = osuCurrObj.Angle.Value;
                     double lastAngle = osuLastObj.Angle.Value;
                     double minDist = Math.Min(Math.Min(osuCurrObj.LazyJumpDistance, osuLastObj.LazyJumpDistance), osuLastLastObj.LazyJumpDistance);
+                    double lololol = (Math.Cos(osuCurrObj.Angle.Value) + 1) / 2;
 
                     // Rewarding angles, take the smaller velocity as base.
                     double angleBonus = Math.Min(currVelocity, prevVelocity);
@@ -116,7 +135,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
 
                     // Penalize angle repetition.
                     wideAngleBonus *= 1 - Math.Min(wideAngleBonus, Math.Pow(calcWideAngleBonus(lastAngle), 3));
-                    acuteAngleBonus *= (0.25 - Math.Min(0.25, angleBonus / 50)) + (0.75 + Math.Min(0.25, angleBonus / 50)) * (1 - Math.Min(acuteAngleBonus, Math.Pow(calcAcuteAngleBonus(lastAngle), 3)));
+                    acuteAngleBonus *= (0.25 - Math.Min(0.25, angleBonus * Math.Sqrt(velocityChangeBonus + 1) / 50)) + (0.75 + Math.Min(0.25, angleBonus * Math.Sqrt(velocityChangeBonus + 1) / 50)) * (1 - Math.Min(acuteAngleBonus, Math.Pow(calcAcuteAngleBonus(lastAngle), 3)));
 
                     // Apply full wide angle bonus for distance more than one diameter
                     wideAngleBonus *= angleBonus * DifficultyCalculationUtils.Smootherstep(minDist, 0, diameter);
@@ -124,7 +143,11 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                     // Apply acute angle bonus for BPM above 300 1/2 and distance more than one diameter
                     
                     acuteAngleBonus *= Math.Sqrt(angleBonus) *
-                                       DifficultyCalculationUtils.Smootherstep(minDist, diameter, diameter * 2);
+
+
+                                       DifficultyCalculationUtils.Smootherstep(minDist, Math.Max(lololol, 0.1) * diameter, Math.Max(lololol, 0.1) * diameter * 2);
+
+
                     acuteAngleBonus /= Math.Pow(osuCurrObj.StrainTime, 2);
 
                     // Apply wiggle bonus for jumps that are [radius, 3*diameter] in distance, with < 110 angle
@@ -137,24 +160,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                                   * Math.Pow(DifficultyCalculationUtils.ReverseLerp(osuLastObj.LazyJumpDistance, diameter * 3, diameter), 1.8)
                                   * DifficultyCalculationUtils.Smootherstep(lastAngle, double.DegreesToRadians(110), double.DegreesToRadians(60));
                 }
-            }
-
-            if (Math.Max(prevVelocity, currVelocity) != 0)
-            {
-                // We want to use the average velocity over the whole object when awarding differences, not the individual jump and slider path velocities.
-                prevVelocity = (osuLastObj.LazyJumpDistance + osuLastLastObj.TravelDistance) / osuLastObj.StrainTime;
-                currVelocity = (osuCurrObj.LazyJumpDistance + osuLastObj.TravelDistance) / osuCurrObj.StrainTime;
-
-                // Scale with ratio of difference compared to 0.5 * max dist.
-                double distRatio = Math.Pow(Math.Sin(Math.PI / 2 * Math.Abs(prevVelocity - currVelocity) / Math.Max(prevVelocity, currVelocity)), 2);
-
-                // Reward for % distance up to 125 / strainTime for overlaps where velocity is still changing.
-                double overlapVelocityBuff = Math.Min(diameter * 1.25 / Math.Min(osuCurrObj.StrainTime, osuLastObj.StrainTime), Math.Abs(prevVelocity - currVelocity));
-
-                velocityChangeBonus = overlapVelocityBuff * distRatio;
-
-                // Penalize for rhythm changes.
-                velocityChangeBonus *= Math.Pow(Math.Min(osuCurrObj.StrainTime, osuLastObj.StrainTime) / Math.Max(osuCurrObj.StrainTime, osuLastObj.StrainTime), 2);
             }
 
             if (osuLastObj.BaseObject is Slider)

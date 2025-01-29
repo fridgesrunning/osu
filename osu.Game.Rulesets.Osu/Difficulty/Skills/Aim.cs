@@ -32,7 +32,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Skills
         private double bonusMultiplier => 40;
 
         private double strainDecayBase => 0.15;
-        private double bonusDecayBase => 0.2;
+        private double bonusDecayBase => 0.175;
 
         private readonly List<double> sliderStrains = new List<double>();
 

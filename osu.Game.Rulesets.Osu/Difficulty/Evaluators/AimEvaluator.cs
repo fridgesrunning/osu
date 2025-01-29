@@ -60,7 +60,7 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             var osuLastObj = (OsuDifficultyHitObject)current.Previous(0);
             var osuLastLastObj = (OsuDifficultyHitObject)current.Previous(1);
 
-         double wide_angle_multiplier = 1;
+         double wide_angle_multiplier = 1.5;
          double acute_angle_multiplier = 20000;
          double slider_multiplier = 1.35;
          double velocity_change_multiplier = 0.75;
@@ -187,7 +187,5 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
         private static double calcWideAngleBonus(double angle) => DifficultyCalculationUtils.Smoothstep(angle, double.DegreesToRadians(40), double.DegreesToRadians(140));
 
         private static double calcAcuteAngleBonus(double angle) => DifficultyCalculationUtils.Smoothstep(angle, double.DegreesToRadians(140), double.DegreesToRadians(40));
-
-        private static double fakesquareness (double angle) => DifficultyCalculationUtils.Smoothstep(angle, double.DegreesToRadians(90), double.DegreesToRadians(180));
     }
 }

@@ -30,9 +30,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
             var osuCurrObj = (OsuDifficultyHitObject)current;
             var osuLastObj = (OsuDifficultyHitObject)current.Previous(0);
 
-            const int radius = OsuDifficultyHitObject.NORMALISED_RADIUS;
-            const int diameter = OsuDifficultyHitObject.NORMALISED_DIAMETER;
-
             // Calculate the velocity to the current hitobject, which starts with a base distance / time assuming the last object is a hitcircle.
             double currVelocity = osuCurrObj.LazyJumpDistance;
 
@@ -128,7 +125,6 @@ namespace osu.Game.Rulesets.Osu.Difficulty.Evaluators
                     double avgthree = (currAngle + lastAngle + lastLastAngle) / 3;
                     double minDist = Math.Min(Math.Min(osuCurrObj.LazyJumpDistance, osuLastObj.LazyJumpDistance), osuLastLastObj.LazyJumpDistance);
                     double lololol = (Math.Cos(avgthree) + 1) / 2;
-                    double fakesquareness = 1;
                     
 
                     // Rewarding angles, take the smaller velocity as base.
